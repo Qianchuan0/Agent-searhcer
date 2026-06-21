@@ -1,19 +1,19 @@
 'use client';
 
-/** 左导航底部用户卡片：头像 + 在线状态绿点 + 用户名（占位） */
 export default function UserCard() {
   return (
-    <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-[var(--border)] bg-white/[0.02]">
-      <div className="relative shrink-0">
-        <div className="h-9 w-9 rounded-full bg-indigo-gradient flex items-center justify-center text-white text-sm font-semibold shadow-glow-primary">
-          研
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
+      <div className="flex items-center gap-3">
+        <div className="relative shrink-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,rgba(92,103,255,0.95),rgba(28,207,255,0.82))] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(42,92,255,0.35)]">
+            AI
+          </div>
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#121212] bg-emerald-400" />
         </div>
-        {/* 在线状态绿点 */}
-        <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[var(--success)] ring-2 ring-[var(--bg)]" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-ink truncate">研究者</p>
-        <p className="text-xs text-ink-muted truncate">在线</p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-ink">研究助手</p>
+          <p className="truncate text-xs text-ink-muted">本地工作区在线</p>
+        </div>
       </div>
     </div>
   );

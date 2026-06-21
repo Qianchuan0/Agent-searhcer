@@ -3,6 +3,10 @@
 import { Toaster } from 'react-hot-toast';
 import { useResearchStore } from '@/stores/researchStore';
 import AppShell from './AppShell';
+import HistoryPanel from '@/components/shell/HistoryPanel';
+import WorkflowPanel from '@/components/shell/WorkflowPanel';
+import SourcesPanel from '@/components/shell/SourcesPanel';
+import HelpPanel from '@/components/shell/HelpPanel';
 
 interface TripleLayoutProps {
   children: React.ReactNode;
@@ -27,8 +31,27 @@ export default function TripleLayout({
   onStop,
   onNewResearch,
 }: TripleLayoutProps) {
+  const activeNav = useResearchStore((s) => s.activeNav);
   const inspectorOpen = useResearchStore((s) => s.inspectorOpen);
   const setInspectorOpen = useResearchStore((s) => s.setInspectorOpen);
+  const setActiveNav = useResearchStore((s) => s.setActiveNav);
+  const titleMap = {
+    home: showResult ? '研究工作区' : '开始新的研究',
+    conversations: '历史记录',
+    workflow: '执行流程',
+    resources: '资料来源',
+    help: '使用帮助',
+  } as const;
+  const middleContent =
+    activeNav === 'conversations'
+      ? <HistoryPanel />
+      : activeNav === 'workflow'
+        ? <WorkflowPanel />
+        : activeNav === 'resources'
+          ? <SourcesPanel />
+          : activeNav === 'help'
+            ? <HelpPanel />
+            : children;
 
   const middle = (
     <>
@@ -38,7 +61,7 @@ export default function TripleLayout({
       <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-3 glass-panel">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-ink">
-            {showResult ? '研究工作区' : '开始新的研究'}
+            {titleMap[activeNav]}
           </p>
         </div>
 
@@ -71,7 +94,10 @@ export default function TripleLayout({
           {(isStopped || !loading) && showResult && (
             <button
               type="button"
-              onClick={onNewResearch}
+              onClick={() => {
+                setActiveNav('home');
+                onNewResearch?.();
+              }}
               className="neon-btn px-4 py-1.5 text-sm"
             >
               新研究
@@ -81,8 +107,8 @@ export default function TripleLayout({
       </div>
 
       {/* 内容滚动区 */}
-      <div ref={mainContentRef} className="relative flex-1 overflow-y-auto">
-        {children}
+      <div ref={mainContentRef} className="app-scrollbar relative flex-1 overflow-y-auto">
+        {middleContent}
       </div>
     </>
   );

@@ -122,7 +122,7 @@ export const useResearchStore = create<ResearchState>()(
         isProcessingChat: false,
 
         inspectorOpen: true,
-        activeNav: 'conversations',
+        activeNav: 'home',
         socket: null,
 
         setOrderedData: fset<Data[]>('orderedData'),

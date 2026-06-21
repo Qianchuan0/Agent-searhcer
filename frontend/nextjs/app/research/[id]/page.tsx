@@ -11,6 +11,7 @@ import { getAppropriateLayout } from "@/utils/getLayout";
 import ResearchContent from "@/components/research/ResearchContent";
 import NotFoundContent from "@/components/research/NotFoundContent";
 import LoadingDots from "@/components/LoadingDots";
+import { RESEARCH_STATUS_KEYS } from "@/utils/researchStatus";
 
 // Import mobile components
 import MobileResearchContent from "@/components/mobile/MobileResearchContent";
@@ -263,7 +264,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
   // Process ordered data into logs for display
   useEffect(() => {
     const groupedData = preprocessOrderedData(orderedData);
-    const statusReports = ["agent_generated", "starting_research", "planning_research", "error"];
+    const statusReports = [...RESEARCH_STATUS_KEYS];
     
     const newLogs = groupedData.reduce((acc: any[], data) => {
       // Process accordion blocks (grouped data)

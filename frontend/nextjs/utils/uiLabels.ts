@@ -44,20 +44,18 @@ export function formatOptionLabel(label: string, description?: string) {
 
 export function translateAgentLogText(text: string) {
   const exactMap: Record<string, string> = {
-    'Researching for relevant information across multiple sources...':
-      '正在从多个来源检索相关信息...',
-    'Researching for relevant information across multiple sources':
-      '正在从多个来源检索相关信息...',
-    'Planning the research strategy...':
-      '正在规划研究策略...',
-    'Planning research strategy...':
-      '正在规划研究策略...',
-    'Generating final report...':
-      '正在生成最终报告...',
-    'Finalizing report...':
-      '正在整理最终报告...',
-    'Analyzing collected information...':
-      '正在分析已收集的信息...',
+    '已收到你的问题，正在启动研究任务...': '已收到你的问题，正在启动研究任务...',
+    '正在连接研究服务并准备研究计划...': '正在连接研究服务并准备研究计划...',
+    '研究服务已连接，正在发送任务并生成研究步骤...': '研究服务已连接，正在发送任务并生成研究步骤...',
+    '研究服务已连接，但启动比平时更久，正在继续初始化...': '研究服务已连接，但启动比平时更久，正在继续初始化...',
+    '暂时还没有返回内容，通常是在初始化模型、搜索或抓取数据...': '暂时还没有返回内容，通常是在初始化模型、搜索或抓取数据...',
+    'Researching for relevant information across multiple sources...': '正在从多个来源检索相关信息...',
+    'Researching for relevant information across multiple sources': '正在从多个来源检索相关信息...',
+    'Planning the research strategy...': '正在规划研究策略...',
+    'Planning research strategy...': '正在规划研究策略...',
+    'Generating final report...': '正在生成最终报告...',
+    'Finalizing report...': '正在整理最终报告...',
+    'Analyzing collected information...': '正在分析已收集的信息...',
   };
 
   if (exactMap[text]) {

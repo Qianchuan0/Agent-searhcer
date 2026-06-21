@@ -29,7 +29,21 @@ export interface ChatData extends BaseData {
   metadata?: any; // For storing search results and other contextual information
 }
 
-export type Data = BasicData | LanggraphButtonData | DifferencesData | QuestionData | ChatData;
+export interface StreamData extends BaseData {
+  type: 'logs' | 'report' | 'report_complete' | 'path';
+  content: string;
+  output?: any;
+  metadata?: any;
+  contentAndType?: string;
+}
+
+export type Data =
+  | BasicData
+  | LanggraphButtonData
+  | DifferencesData
+  | QuestionData
+  | ChatData
+  | StreamData;
 
 export interface MCPConfig {
   name: string;

@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Data, ChatBoxSettings, QuestionData } from '../types/data';
+import { Data, ChatBoxSettings } from '../types/data';
 import { getHost } from '../helpers/getHost';
+import { createStatusEvent } from '@/utils/researchStatus';
 
 export const useWebSocket = (
   setOrderedData: React.Dispatch<React.SetStateAction<Data[]>>,
@@ -11,6 +12,13 @@ export const useWebSocket = (
 ) => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const heartbeatInterval = useRef<number>();
+  const startupStatusTimeouts = useRef<number[]>([]);
+  const hasReceivedMessage = useRef(false);
+
+  const clearStartupStatusTimeouts = () => {
+    startupStatusTimeouts.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    startupStatusTimeouts.current = [];
+  };
 
   // Cleanup function for heartbeat and socket on unmount
   useEffect(() => {
@@ -25,6 +33,8 @@ export const useWebSocket = (
         console.log('Closing WebSocket due to component unmount');
         socket.close(1000, "Component unmounted");
       }
+
+      clearStartupStatusTimeouts();
     };
   }, [socket]);
 
@@ -52,8 +62,8 @@ export const useWebSocket = (
       socket.close(1000, "New connection requested");
     }
 
-    const storedConfig = localStorage.getItem('apiVariables');
-    const apiVariables = storedConfig ? JSON.parse(storedConfig) : {};
+    hasReceivedMessage.current = false;
+    clearStartupStatusTimeouts();
 
     if (typeof window !== 'undefined') {
       
@@ -66,9 +76,38 @@ export const useWebSocket = (
       const newSocket = new WebSocket(ws_uri);
       setSocket(newSocket);
 
+      startupStatusTimeouts.current = [
+        window.setTimeout(() => {
+          if (!hasReceivedMessage.current) {
+            setOrderedData((prevOrder) => [
+              ...prevOrder,
+              createStatusEvent(
+                'planning_research',
+                '研究服务已连接，但启动比平时更久，正在继续初始化...'
+              ),
+            ]);
+          }
+        }, 8000),
+        window.setTimeout(() => {
+          if (!hasReceivedMessage.current) {
+            setOrderedData((prevOrder) => [
+              ...prevOrder,
+              createStatusEvent(
+                'planning_research',
+                '暂时还没有返回内容，通常是在初始化模型、搜索或抓取数据...'
+              ),
+            ]);
+          }
+        }, 20000),
+      ];
+
       // WebSocket connection opened handler
       newSocket.onopen = () => {
         console.log('WebSocket connection opened');
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          createStatusEvent('planning_research', '研究服务已连接，正在发送任务并生成研究步骤...'),
+        ]);
         
         const domainFilters = JSON.parse(localStorage.getItem('domainFilters') || '[]');
         const domains = domainFilters ? domainFilters.map((domain: any) => domain.value) : [];
@@ -104,6 +143,9 @@ export const useWebSocket = (
           // Handle ping response
           if (event.data === 'pong') return;
 
+          hasReceivedMessage.current = true;
+          clearStartupStatusTimeouts();
+
           // Try to parse JSON data
           console.log(`Received WebSocket message: ${event.data.substring(0, 100)}...`);
           const data = JSON.parse(event.data);
@@ -137,6 +179,7 @@ export const useWebSocket = (
         if (heartbeatInterval.current) {
           clearInterval(heartbeatInterval.current);
         }
+        clearStartupStatusTimeouts();
         setSocket(null);
       };
 
@@ -145,6 +188,12 @@ export const useWebSocket = (
         if (heartbeatInterval.current) {
           clearInterval(heartbeatInterval.current);
         }
+        clearStartupStatusTimeouts();
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          createStatusEvent('error', '研究服务连接失败，请稍后重试。'),
+        ]);
+        setLoading(false);
       };
     }
   }, [socket, setOrderedData, setAnswer, setLoading, setShowHumanFeedback, setQuestionForHuman]);

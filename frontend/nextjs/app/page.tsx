@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Hero from "@/components/Hero";
 import ResearchContent from "@/components/research/ResearchContent";
 import { getAppropriateLayout } from "@/utils/getLayout";
+import { createInitialResearchEvents, RESEARCH_STATUS_KEYS } from "@/utils/researchStatus";
 
 // Import the mobile components
 import MobileHomeScreen from "@/components/mobile/MobileHomeScreen";
@@ -301,7 +302,7 @@ export default function Home() {
     setPromptValue("");
     setAnswer("");
     setCurrentResearchId(null); // Reset current research ID for new research
-    setOrderedData((prevOrder) => [...prevOrder, { type: 'question', content: newQuestion }]);
+    setOrderedData(createInitialResearchEvents(newQuestion));
 
     // For mobile, use a simplified approach without websockets
     if (isMobile) {
@@ -785,7 +786,7 @@ export default function Home() {
    */
   useEffect(() => {
     const groupedData = preprocessOrderedData(orderedData);
-    const statusReports = ["agent_generated", "starting_research", "planning_research", "error"];
+    const statusReports = [...RESEARCH_STATUS_KEYS];
     
     const newLogs = groupedData.reduce((acc: any[], data) => {
       // Process accordion blocks (grouped data)

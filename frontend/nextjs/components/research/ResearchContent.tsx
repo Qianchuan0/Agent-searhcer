@@ -4,6 +4,7 @@ import InputArea from "@/components/ResearchBlocks/elements/InputArea";
 import ChatInput from "@/components/ResearchBlocks/elements/ChatInput";
 import LoadingDots from "@/components/LoadingDots";
 import { ChatBoxSettings, Data } from "@/types/data";
+import { getLatestStatusMessage } from "@/utils/researchStatus";
 
 interface ResearchContentProps {
   showResult: boolean;
@@ -53,6 +54,7 @@ export default function ResearchContent({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const internalBottomRef = useRef<HTMLDivElement>(null);
   const finalBottomRef = bottomRef || internalBottomRef;
+  const latestStatusMessage = getLatestStatusMessage(allLogs);
 
   return (
     <div className="flex h-full w-full grow flex-col justify-between">
@@ -91,8 +93,16 @@ export default function ResearchContent({
       
       <div id="input-area" className="container px-4 lg:px-0 mb-4">
         {loading || isProcessingChat ? (
-          <div className="mt-4 flex justify-center">
-            <LoadingDots />
+          <div className="mt-4 rounded-lg border border-gray-700/50 bg-gray-900/80 px-4 py-4 shadow-md">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-white">{latestStatusMessage}</p>
+                <p className="mt-1 text-xs text-gray-400">
+                  研究过程中会持续在上方展示进度和执行日志。
+                </p>
+              </div>
+              <LoadingDots />
+            </div>
           </div>
         ) : (
           <div>

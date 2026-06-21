@@ -144,6 +144,13 @@ async def handle_start_command(websocket, data: str, manager):
         print("Error: Missing task or report_type")
         return
 
+    await websocket.send_json({
+        "type": "logs",
+        "content": "starting_research",
+        "output": "后端已接收任务，正在初始化研究流程...",
+        "metadata": {"source": "backend", "stage": "accepted"},
+    })
+
     # Create logs handler with websocket and task
     logs_handler = CustomLogsHandler(websocket, task)
     # Initialize log content with query
@@ -152,6 +159,12 @@ async def handle_start_command(websocket, data: str, manager):
         "sources": [],
         "context": [],
         "report": ""
+    })
+    await logs_handler.send_json({
+        "type": "logs",
+        "content": "planning_research",
+        "output": "正在准备研究角色、检索器和上下文环境...",
+        "metadata": {"source": "backend", "stage": "preparing"},
     })
 
     sanitized_filename = sanitize_filename(f"task_{int(time.time())}_{task}")
@@ -172,6 +185,12 @@ async def handle_start_command(websocket, data: str, manager):
         max_search_results,
     )
     report = str(report)
+    await logs_handler.send_json({
+        "type": "logs",
+        "content": "researching",
+        "output": "研究流程已完成主要阶段，正在整理最终结果...",
+        "metadata": {"source": "backend", "stage": "finalizing"},
+    })
     file_paths = await generate_report_files(report, sanitized_filename)
     # Add JSON log path to file_paths
     file_paths["json"] = os.path.relpath(logs_handler.log_file)

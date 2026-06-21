@@ -19,6 +19,7 @@ interface ResearchResultsProps {
   currentResearchId?: string;
   isProcessingChat?: boolean;
   onShareClick?: () => void;
+  loading?: boolean;
 }
 
 export const ResearchResults: React.FC<ResearchResultsProps> = ({
@@ -29,7 +30,8 @@ export const ResearchResults: React.FC<ResearchResultsProps> = ({
   handleClickSuggestion,
   currentResearchId,
   isProcessingChat = false,
-  onShareClick
+  onShareClick,
+  loading = false,
 }) => {
   const groupedData = preprocessOrderedData(orderedData);
   const pathData = groupedData.find(data => data.type === 'path');
@@ -71,7 +73,7 @@ export const ResearchResults: React.FC<ResearchResultsProps> = ({
     <>
       {initialQuestion && <Question question={initialQuestion.content} />}
       <WorkflowStepper orderedData={orderedData} />
-      {orderedData.length > 0 && <LogsSection logs={allLogs} />}
+      {orderedData.length > 0 && <LogsSection logs={allLogs} loading={loading} />}
       <QuestionProgress orderedData={orderedData} handleClickSuggestion={handleClickSuggestion} />
       {sourceComponents}
       {imageComponents}

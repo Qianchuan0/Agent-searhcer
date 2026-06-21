@@ -112,6 +112,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
             chatBoxSettings={chatBoxSettings}
             handleClickSuggestion={handleClickSuggestion}
             currentResearchId={currentResearchId}
+            loading={loading}
           />
           
           {/* Loading indicator - show during research */}

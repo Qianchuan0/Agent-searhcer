@@ -83,6 +83,7 @@ export default function ResearchContent({
             currentResearchId={currentResearchId}
             isProcessingChat={isProcessingChat}
             onShareClick={onShareClick}
+            loading={loading}
           />
         </div>
 

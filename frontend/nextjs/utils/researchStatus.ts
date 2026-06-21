@@ -1,4 +1,4 @@
-import { Data, QuestionData, StreamData } from '@/types/data';
+import { QuestionData, StreamData } from '@/types/data';
 
 export const RESEARCH_STATUS_KEYS = [
   'starting_research',
@@ -9,6 +9,19 @@ export const RESEARCH_STATUS_KEYS = [
 ] as const;
 
 type ResearchStatusKey = (typeof RESEARCH_STATUS_KEYS)[number];
+
+export const LOCAL_RESEARCH_STATUS_MESSAGES = {
+  received: '已收到你的问题，正在启动研究任务...',
+  connecting: '正在连接研究服务并准备研究计划...',
+  connected: '研究服务已连接，正在发送任务并生成研究步骤...',
+  delayed: '研究服务已连接，但启动比平时更久，正在继续初始化...',
+  waiting: '暂时还没有返回内容，通常是在初始化模型、搜索或抓取数据...',
+  backendAccepted: '后端已接收任务，正在初始化研究流程...',
+  backendPreparing: '正在准备研究角色、检索器和上下文环境...',
+  backendRunning: '研究流程已启动，正在搜集可用来源...',
+  connectionFailed: '研究服务连接失败，请稍后重试。',
+  defaultLoading: '正在准备研究任务...',
+} as const;
 
 export function createQuestionEvent(question: string): QuestionData {
   return {
@@ -22,24 +35,19 @@ export function createStatusEvent(
   output: string,
   metadata: Record<string, any> = {}
 ): StreamData {
+  const source = metadata.source ?? 'client';
+
   return {
     type: 'logs',
     content,
     output,
     metadata: {
-      source: 'client',
+      source,
+      createdAt: Date.now(),
       ...metadata,
     },
     contentAndType: `${content}-logs`,
   };
-}
-
-export function createInitialResearchEvents(question: string): Data[] {
-  return [
-    createQuestionEvent(question),
-    createStatusEvent('starting_research', '已收到你的问题，正在启动研究任务...'),
-    createStatusEvent('planning_research', '正在连接研究服务并准备研究计划...'),
-  ];
 }
 
 export function getLatestStatusMessage(allLogs: Array<{ text?: string }> = []) {
@@ -50,5 +58,5 @@ export function getLatestStatusMessage(allLogs: Array<{ text?: string }> = []) {
     }
   }
 
-  return '正在准备研究任务...';
+  return LOCAL_RESEARCH_STATUS_MESSAGES.defaultLoading;
 }

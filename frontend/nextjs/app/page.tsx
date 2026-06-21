@@ -16,7 +16,12 @@ import { v4 as uuidv4 } from 'uuid';
 import Hero from "@/components/Hero";
 import ResearchContent from "@/components/research/ResearchContent";
 import { getAppropriateLayout } from "@/utils/getLayout";
-import { createInitialResearchEvents, RESEARCH_STATUS_KEYS } from "@/utils/researchStatus";
+import {
+  LOCAL_RESEARCH_STATUS_MESSAGES,
+  RESEARCH_STATUS_KEYS,
+  createQuestionEvent,
+  createStatusEvent,
+} from "@/utils/researchStatus";
 
 // Import the mobile components
 import MobileHomeScreen from "@/components/mobile/MobileHomeScreen";
@@ -47,6 +52,7 @@ export default function Home() {
   } = useResearchStore();
 
   const mainContentRef = useRef<HTMLDivElement>(null);
+  const startupLogTimersRef = useRef<number[]>([]);
 
   // Use our custom scroll handler
   const { showScrollButton, scrollToBottom } = useScrollHandler(mainContentRef);
@@ -88,6 +94,35 @@ export default function Home() {
   
   // Use the reference to access websocket functions
   const { socket, initializeWebSocket } = websocketRef.current;
+
+  const clearStartupLogTimers = () => {
+    startupLogTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+    startupLogTimersRef.current = [];
+  };
+
+  const queueInitialResearchLogs = (newQuestion: string) => {
+    clearStartupLogTimers();
+    setOrderedData([createQuestionEvent(newQuestion)]);
+
+    startupLogTimersRef.current = [
+      window.setTimeout(() => {
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          createStatusEvent('starting_research', LOCAL_RESEARCH_STATUS_MESSAGES.received, {
+            source: 'client',
+          }),
+        ]);
+      }, 300),
+      window.setTimeout(() => {
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          createStatusEvent('planning_research', LOCAL_RESEARCH_STATUS_MESSAGES.connecting, {
+            source: 'client',
+          }),
+        ]);
+      }, 1100),
+    ];
+  };
 
   const handleFeedbackSubmit = (feedback: string | null) => {
     if (socket) {
@@ -302,7 +337,7 @@ export default function Home() {
     setPromptValue("");
     setAnswer("");
     setCurrentResearchId(null); // Reset current research ID for new research
-    setOrderedData(createInitialResearchEvents(newQuestion));
+    queueInitialResearchLogs(newQuestion);
 
     // For mobile, use a simplified approach without websockets
     if (isMobile) {
@@ -637,6 +672,7 @@ export default function Home() {
     // Clear previous research data
     setQuestion("");
     setAnswer("");
+    clearStartupLogTimers();
     setOrderedData([]);
     setAllLogs([]);
 

@@ -117,6 +117,12 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
     """Run the agent."""    
     # Create logs handler for this research task
     logs_handler = CustomLogsHandler(websocket, task)
+    await logs_handler.send_json({
+        "type": "logs",
+        "content": "planning_research",
+        "output": "正在选择研究工作流并初始化执行器...",
+        "metadata": {"source": "backend", "stage": "workflow_setup"},
+    })
 
     # Log MCP initialization. Retriever and strategy are configured per-request
     # inside GPTResearcher via mcp_configs/mcp_strategy params — no os.environ
@@ -132,6 +138,12 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
 
     # Initialize researcher based on report type
     if report_type == "multi_agents":
+        await logs_handler.send_json({
+            "type": "logs",
+            "content": "researching",
+            "output": "多智能体研究已启动，正在分配子任务...",
+            "metadata": {"source": "backend", "stage": "multi_agent_start"},
+        })
         report = await run_multi_agent_task(
             query=task, 
             websocket=logs_handler,  # Use logs_handler instead of raw websocket
@@ -142,6 +154,12 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
         report = report.get("report", "")
 
     elif report_type == ReportType.DetailedReport.value:
+        await logs_handler.send_json({
+            "type": "logs",
+            "content": "researching",
+            "output": "详细研究模式已启动，正在展开多阶段检索...",
+            "metadata": {"source": "backend", "stage": "detailed_report_start"},
+        })
         researcher = DetailedReport(
             query=task,
             query_domains=query_domains,
@@ -160,6 +178,12 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
         report = await researcher.run()
         
     else:
+        await logs_handler.send_json({
+            "type": "logs",
+            "content": "researching",
+            "output": "标准研究模式已启动，正在搜集可用来源...",
+            "metadata": {"source": "backend", "stage": "basic_report_start"},
+        })
         researcher = BasicReport(
             query=task,
             query_domains=query_domains,

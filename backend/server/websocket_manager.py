@@ -201,6 +201,15 @@ async def run_agent(task, report_type, report_source, source_urls, document_urls
         )
         report = await researcher.run()
 
+    if report_type != "multi_agents":
+        cost_estimation = researcher.gpt_researcher.get_cost_estimation_details()
+        await logs_handler.send_json({
+            "type": "logs",
+            "content": "cost_estimation",
+            "output": cost_estimation["summary"],
+            "metadata": cost_estimation,
+        })
+
     if report_type != "multi_agents" and return_researcher:
         return report, researcher.gpt_researcher
     else:

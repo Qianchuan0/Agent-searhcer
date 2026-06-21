@@ -183,6 +183,11 @@ class DetailedReport:
             relevant_written_contents=relevant_contents,
         )
 
+        # Detailed report mode spins up sub-researchers per subtopic. Their LLM
+        # spend must be merged back into the parent researcher; otherwise the
+        # total cost shown to the frontend is understated.
+        self.gpt_researcher.merge_costs_from(subtopic_assistant)
+
         self.global_written_sections.extend(self.gpt_researcher.extract_sections(subtopic_report))
         self.global_context = list(set(self._hashable_context(subtopic_assistant.context)))
         self.global_urls.update(subtopic_assistant.visited_urls)

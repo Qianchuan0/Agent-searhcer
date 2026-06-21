@@ -1,7 +1,5 @@
 'use client';
 
-import * as Switch from '@radix-ui/react-switch';
-import * as Slider from '@radix-ui/react-slider';
 import { toast } from 'react-hot-toast';
 import { useResearchStore, DEFAULT_SETTINGS } from '@/stores/researchStore';
 import { ChatBoxSettings } from '@/types/data';
@@ -33,7 +31,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex rounded-lg bg-white/[0.04] p-1 border border-[var(--border)]">
+    <div className="flex rounded-lg border border-[var(--border)] bg-white/[0.04] p-1">
       {options.map((option) => (
         <button
           key={option.value}
@@ -42,7 +40,7 @@ function Segmented<T extends string>({
           className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-all ${
             value === option.value
               ? 'bg-primary text-white shadow-glow-primary'
-              : 'text-ink-secondary hover:text-ink hover:bg-white/[0.04]'
+              : 'text-ink-secondary hover:bg-white/[0.04] hover:text-ink'
           }`}
         >
           {option.label}
@@ -54,43 +52,15 @@ function Segmented<T extends string>({
 
 function Field({
   label,
-  hint,
   children,
 }: {
   label: string;
-  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-ink-secondary">{label}</label>
-        {hint && <span className="text-[10px] text-ink-muted">{hint}</span>}
-      </div>
+      <label className="block text-xs font-medium text-ink-secondary">{label}</label>
       {children}
-    </div>
-  );
-}
-
-function SwitchRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between py-1">
-      <span className="text-xs text-ink-secondary">{label}</span>
-      <Switch.Root
-        checked={checked}
-        onCheckedChange={onChange}
-        className="relative h-5 w-9 rounded-full bg-white/15 data-[state=checked]:bg-primary transition-colors"
-      >
-        <Switch.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white shadow transition-transform data-[state=checked]:translate-x-[18px]" />
-      </Switch.Root>
     </div>
   );
 }
@@ -150,71 +120,6 @@ export default function InspectorControls() {
             ))}
           </select>
         </Field>
-      </section>
-
-      <div className="h-px bg-[var(--border)]" />
-
-      <section className="space-y-4">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
-          研究参数
-        </h3>
-
-        <Field label="研究深度" hint={`${chatBoxSettings.research_depth ?? 50}%`}>
-          <Slider.Root
-            value={[chatBoxSettings.research_depth ?? 50]}
-            max={100}
-            step={5}
-            onValueChange={([value]) => update('research_depth', value)}
-            className="relative flex h-4 w-full touch-none select-none items-center"
-          >
-            <Slider.Track className="relative h-1.5 flex-1 rounded-full bg-white/15">
-              <Slider.Range className="absolute h-full rounded-full bg-indigo-gradient" />
-            </Slider.Track>
-            <Slider.Thumb className="block h-4 w-4 rounded-full border-2 border-primary bg-white shadow-md focus:outline-none" />
-          </Slider.Root>
-        </Field>
-
-        <Field label="智能体数量" hint={`${chatBoxSettings.agent_count ?? 3} 个`}>
-          <div className="flex gap-1.5">
-            {[1, 2, 3, 4, 5].map((count) => (
-              <button
-                key={count}
-                type="button"
-                onClick={() => update('agent_count', count)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${
-                  (chatBoxSettings.agent_count ?? 3) === count
-                    ? 'bg-primary text-white shadow-glow-primary'
-                    : 'bg-white/[0.04] text-ink-secondary hover:text-ink border border-[var(--border)]'
-                }`}
-              >
-                {count}
-              </button>
-            ))}
-          </div>
-        </Field>
-      </section>
-
-      <div className="h-px bg-[var(--border)]" />
-
-      <section className="space-y-1">
-        <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-muted">
-          偏好
-        </h3>
-        <SwitchRow
-          label="结果可视化"
-          checked={chatBoxSettings.visualize_results ?? true}
-          onChange={(value) => update('visualize_results', value)}
-        />
-        <SwitchRow
-          label="自动保存"
-          checked={chatBoxSettings.autosave ?? true}
-          onChange={(value) => update('autosave', value)}
-        />
-        <SwitchRow
-          label="通知提醒"
-          checked={chatBoxSettings.notify ?? false}
-          onChange={(value) => update('notify', value)}
-        />
       </section>
 
       <div className="flex gap-2 pt-2">

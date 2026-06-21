@@ -309,6 +309,8 @@ async def write_report(research_request: ResearchRequest, research_id: str = Non
             "research_information": {
                 "source_urls": researcher.get_source_urls(),
                 "research_costs": researcher.get_costs(),
+                "research_step_costs": researcher.get_step_costs(),
+                "cost_estimation": researcher.get_cost_estimation_details(),
                 "visited_urls": list(researcher.visited_urls),
                 "research_images": researcher.get_research_images(),
                 # "research_sources": researcher.get_research_sources(),  # Raw content of sources may be very large

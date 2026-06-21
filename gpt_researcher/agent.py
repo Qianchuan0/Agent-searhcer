@@ -28,6 +28,7 @@ from .skills.deep_research import DeepResearchSkill
 from .skills.image_generator import ImageGenerator
 from .skills.researcher import ResearchConductor
 from .skills.writer import ReportGenerator
+from .utils.costs import get_cost_estimation_reference
 from .utils.enum import ReportSource, ReportType, Tone
 from .utils.llm import create_chat_completion
 from .vector_store import VectorStoreWrapper
@@ -706,6 +707,42 @@ class GPTResearcher:
         """
         return dict(self.step_costs)
 
+    def get_cost_estimation_details(self) -> dict[str, Any]:
+        """Describe which pricing table is being used for cost estimation."""
+        fast = get_cost_estimation_reference(
+            self.cfg.fast_llm_provider,
+            self.cfg.fast_llm_model,
+        )
+        smart = get_cost_estimation_reference(
+            self.cfg.smart_llm_provider,
+            self.cfg.smart_llm_model,
+        )
+        strategic = get_cost_estimation_reference(
+            self.cfg.strategic_llm_provider,
+            self.cfg.strategic_llm_model,
+        )
+
+        providers = {item["provider"] for item in (fast, smart, strategic)}
+        if providers == {"deepseek"}:
+            summary = (
+                f"当前费用按 DeepSeek 官方单价估算。"
+                f" FAST: {self.cfg.fast_llm_model}，SMART: {self.cfg.smart_llm_model}"
+            )
+        else:
+            summary = (
+                f"当前费用按已配置模型的定价规则估算。"
+                f" FAST: {self.cfg.fast_llm_provider}:{self.cfg.fast_llm_model}，"
+                f" SMART: {self.cfg.smart_llm_provider}:{self.cfg.smart_llm_model}"
+            )
+
+        return {
+            "currency": "USD",
+            "summary": summary,
+            "fast_llm": fast,
+            "smart_llm": smart,
+            "strategic_llm": strategic,
+        }
+
     def set_verbose(self, verbose: bool) -> None:
         """Set the verbose output mode.
 
@@ -736,3 +773,9 @@ class GPTResearcher:
                 "total_cost": self.research_costs,
                 "step_name": step,
             })
+
+    def merge_costs_from(self, other: "GPTResearcher") -> None:
+        """Merge accumulated costs from another researcher instance."""
+        self.research_costs += other.research_costs
+        for step_name, step_cost in other.step_costs.items():
+            self.step_costs[step_name] = self.step_costs.get(step_name, 0.0) + step_cost

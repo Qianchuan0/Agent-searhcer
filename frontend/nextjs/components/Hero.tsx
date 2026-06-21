@@ -116,7 +116,7 @@ const Hero: FC<THeroProps> = ({
           transition={{ duration: 0.8, delay: 0.1 }}
           className="text-2xl sm:text-3xl md:text-4xl font-medium text-center text-white mb-8 sm:mb-10 md:mb-12 px-4"
         >
-          What would you like to research next?
+          接下来你想研究什么？
         </motion.h1>
 
         {/* Input section with enhanced styling */}
@@ -126,7 +126,7 @@ const Hero: FC<THeroProps> = ({
           className="w-full max-w-[800px] pb-6 sm:pb-8 md:pb-10 px-4"
         >
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-teal-600/70 via-cyan-500/60 to-blue-600/70 rounded-xl blur-md opacity-60 group-hover:opacity-85 transition duration-1000 group-hover:duration-200 animate-gradient-x"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary-600/70 via-accent/60 to-accent-600/70 rounded-xl blur-md opacity-60 group-hover:opacity-85 transition duration-1000 group-hover:duration-200 animate-gradient-x"></div>
             <div className="relative bg-black bg-opacity-20 backdrop-blur-sm rounded-xl ring-1 ring-gray-800/60">
               <InputArea
                 promptValue={promptValue}
@@ -143,7 +143,7 @@ const Hero: FC<THeroProps> = ({
             className="mt-6 text-center px-4"
           >
             <p className="text-gray-400 text-sm font-light">
-              agent Researcher may make mistakes. Verify important information and check sources.
+              agent Researcher 可能会出错。重要信息请自行核验，并检查引用来源。
             </p>
           </motion.div>
         </motion.div>
@@ -163,9 +163,9 @@ const Hero: FC<THeroProps> = ({
                 animate="visible"
                 transition={{ duration: 0.4, delay: 0.6 + (index * 0.1) }}
                 className="flex h-[38px] sm:h-[42px] cursor-pointer items-center justify-center gap-[6px] rounded-lg 
-                         border border-solid border-teal-500/30 bg-gradient-to-r from-teal-900/30 to-cyan-900/30 
-                         backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 hover:border-teal-500/60 hover:from-teal-900/40 
-                         hover:to-cyan-900/40 transition-all duration-300 hover:shadow-lg hover:shadow-teal-900/20 min-w-[100px]"
+                         border border-solid border-primary/30 bg-gradient-to-r from-primary-600/30 to-primary-600/30 
+                         backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 hover:border-primary/60 hover:from-primary-600/40 
+                         hover:to-primary-600/40 transition-all duration-300 hover:shadow-lg hover:shadow-primary-600/20 min-w-[100px]"
                 onClick={() => handleClickSuggestion(item?.name)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.98 }}
@@ -266,17 +266,17 @@ type suggestionType = {
 const suggestions: suggestionType[] = [
   {
     id: 1,
-    name: "Stock analysis on ",
+    name: "帮我分析这只股票：",
     icon: "/img/stock2.svg",
   },
   {
     id: 2,
-    name: "Help me plan an adventure to ",
+    name: "帮我规划一趟旅行，目的地是：",
     icon: "/img/hiker.svg",
   },
   {
     id: 3,
-    name: "What are the latest news on ",
+    name: "最近关于这个话题有哪些新动态：",
     icon: "/img/news.svg",
   },
 ];

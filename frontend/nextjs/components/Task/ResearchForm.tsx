@@ -6,6 +6,11 @@ import LayoutSelector from "../Settings/LayoutSelector";
 import DomainFilter from "./DomainFilter";
 import { useAnalytics } from "../../hooks/useAnalytics";
 import { ChatBoxSettings, Domain, MCPConfig } from '@/types/data';
+import {
+  REPORT_SOURCE_OPTIONS,
+  REPORT_TYPE_OPTIONS,
+  formatOptionLabel,
+} from '@/utils/uiLabels';
 
 interface ResearchFormProps {
   chatBoxSettings: ChatBoxSettings;
@@ -110,7 +115,7 @@ export default function ResearchForm({
     >
       <div className="form-group">
         <label htmlFor="report_type" className="agent_question">
-          Report Type{" "}
+          报告类型
         </label>
         <select
           name="report_type"
@@ -119,20 +124,17 @@ export default function ResearchForm({
           className="form-control-static"
           required
         >
-          <option value="research_report">
-            Summary - Short and fast (~2 min)
-          </option>
-          <option value="deep">Deep Research Report</option>
-          <option value="multi_agents">Multi Agents Report</option>
-          <option value="detailed_report">
-            Detailed - In depth and longer (~5 min)
-          </option>
+          {REPORT_TYPE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {formatOptionLabel(option.label, option.description)}
+            </option>
+          ))}
         </select>
       </div>
 
       <div className="form-group">
         <label htmlFor="report_source" className="agent_question">
-          Report Source{" "}
+          报告来源
         </label>
         <select
           name="report_source"
@@ -141,9 +143,13 @@ export default function ResearchForm({
           className="form-control-static"
           required
         >
-          <option value="web">The Internet</option>
-          <option value="local">My Documents</option>
-          <option value="hybrid">Hybrid</option>
+          {REPORT_SOURCE_OPTIONS.filter((option) =>
+            ['web', 'local', 'hybrid'].includes(option.value)
+          ).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
       </div>
 

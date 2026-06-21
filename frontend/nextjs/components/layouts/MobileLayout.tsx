@@ -4,6 +4,13 @@ import Image from "next/image";
 import { ChatBoxSettings } from "@/types/data";
 import { useResearchHistoryContext } from "@/hooks/ResearchHistoryContext";
 import { formatDistanceToNow } from "date-fns";
+import {
+  LAYOUT_OPTIONS,
+  REPORT_SOURCE_OPTIONS,
+  REPORT_TYPE_OPTIONS,
+  TONE_OPTIONS,
+  formatOptionLabel,
+} from "@/utils/uiLabels";
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -42,14 +49,14 @@ export default function MobileLayout({
   
   // Format timestamp for display
   const formatTimestamp = (timestamp: number | string | Date | undefined) => {
-    if (!timestamp) return 'Unknown time';
+    if (!timestamp) return '未知时间';
     
     try {
       const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return 'Unknown time';
+      if (isNaN(date.getTime())) return '未知时间';
       return formatDistanceToNow(date, { addSuffix: true });
     } catch {
-      return 'Unknown time';
+      return '未知时间';
     }
   };
   
@@ -89,7 +96,7 @@ export default function MobileLayout({
               <button
                 onClick={onStop}
                 className="p-2 rounded-full bg-red-500/20 text-red-300 hover:bg-red-500/30"
-                aria-label="Stop research"
+                aria-label="停止研究"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
@@ -101,7 +108,7 @@ export default function MobileLayout({
               <button
                 onClick={onNewResearch}
                 className="p-2 rounded-full bg-sky-500/20 text-sky-300 hover:bg-sky-500/30"
-                aria-label="New research"
+                aria-label="新建研究"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -117,7 +124,7 @@ export default function MobileLayout({
                 if (toggleSidebar) toggleSidebar();
               }}
               className="p-2 rounded-full bg-gray-800/50 text-gray-300 hover:bg-gray-700/50"
-              aria-label="View history"
+              aria-label="查看历史"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -134,7 +141,7 @@ export default function MobileLayout({
                 setShowHistory(false);
               }}
               className="p-2 rounded-full bg-gray-800/50 text-gray-300 hover:bg-gray-700/50"
-              aria-label="Settings"
+              aria-label="设置"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -166,7 +173,7 @@ export default function MobileLayout({
                   <button
                     key={item.id}
                     onClick={() => handleHistoryItemClick(item.id)}
-                    className="w-full bg-gray-900/60 hover:bg-gray-800 rounded-lg p-3 text-left transition-colors focus:outline-none focus:ring-1 focus:ring-teal-500/50 border border-gray-700/30"
+                    className="w-full bg-gray-900/60 hover:bg-gray-800 rounded-lg p-3 text-left transition-colors focus:outline-none focus:ring-1 focus:ring-primary/50 border border-gray-700/30"
                   >
                     <h3 className="text-sm font-medium text-gray-200 line-clamp-1">{item.question}</h3>
                     <p className="text-xs text-gray-400 mt-1.5 flex items-center">
@@ -189,9 +196,9 @@ export default function MobileLayout({
                 <p className="text-sm text-gray-400">No research history yet</p>
                 <button 
                   onClick={onNewResearch} 
-                  className="mt-3 px-4 py-2 text-xs text-teal-300 bg-teal-900/30 hover:bg-teal-800/40 rounded-md transition-colors"
+                  className="mt-3 px-4 py-2 text-xs text-primary-300 bg-primary-600/30 hover:bg-primary-600/40 rounded-md transition-colors"
                 >
-                  Start New Research
+                  开始新研究
                 </button>
               </div>
             )}
@@ -200,9 +207,9 @@ export default function MobileLayout({
               <div className="mt-3 pt-2 border-t border-gray-700/30 flex justify-center">
                 <a 
                   href="/history" 
-                  className="text-xs text-teal-400 hover:text-teal-300 transition-colors"
+                  className="text-xs text-primary-400 hover:text-primary-300 transition-colors"
                 >
-                  View All Research History
+                  查看全部研究历史
                 </a>
               </div>
             )}
@@ -213,7 +220,7 @@ export default function MobileLayout({
         {showSettings && (
           <div className="px-4 py-3 bg-gray-800/90 border-t border-gray-700/50 animate-slide-down shadow-lg">
             <div className="mb-2 flex justify-between items-center">
-              <h3 className="text-sm font-medium text-gray-200">Settings</h3>
+              <h3 className="text-sm font-medium text-gray-200">设置</h3>
               <button 
                 onClick={() => setShowSettings(false)}
                 className="text-gray-400 hover:text-gray-300"
@@ -227,57 +234,66 @@ export default function MobileLayout({
             
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Report Type</label>
+                  <label className="block text-xs text-gray-400 mb-1">报告类型</label>
                 <select 
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   value={chatBoxSettings.report_type}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, report_type: e.target.value})}
                 >
-                  <option value="research_report">Summary - Short and fast (~2 min)</option>
-                  <option value="deep">Deep Research Report</option>
-                  <option value="multi_agents">Multi Agents Report</option>
-                  <option value="detailed_report">Detailed - In depth and longer (~5 min)</option>
+                  {REPORT_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {formatOptionLabel(option.label, option.description)}
+                    </option>
+                  ))}
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Research Source</label>
+                <label className="block text-xs text-gray-400 mb-1">研究来源</label>
                 <select 
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   value={chatBoxSettings.report_source}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, report_source: e.target.value})}
                 >
-                  <option value="web">Web</option>
-                  <option value="scholar">Scholar</option>
+                  {REPORT_SOURCE_OPTIONS.filter((option) =>
+                    ['web', 'local', 'hybrid', 'scholar'].includes(option.value)
+                  ).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Research Tone</label>
+                <label className="block text-xs text-gray-400 mb-1">语气风格</label>
                 <select 
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   value={chatBoxSettings.tone}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, tone: e.target.value})}
                 >
-                  <option value="Objective">Objective - Impartial and unbiased presentation of facts</option>
-                  <option value="Formal">Formal - Adheres to academic standards</option>
-                  <option value="Analytical">Analytical - Critical evaluation of data</option>
-                  <option value="Persuasive">Persuasive - Convincing viewpoint</option>
-                  <option value="Informative">Informative - Clear, comprehensive information</option>
-                  <option value="Simple">Simple - Basic vocabulary and clear explanations</option>
-                  <option value="Casual">Casual - Conversational style</option>
+                  {TONE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {formatOptionLabel(option.label, option.description)}
+                    </option>
+                  ))}
                 </select>
               </div>
               
               <div>
-                <label className="block text-xs text-gray-400 mb-1">Layout</label>
+                <label className="block text-xs text-gray-400 mb-1">布局方式</label>
                 <select 
-                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-md py-1.5 px-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   value={chatBoxSettings.layoutType}
                   onChange={(e) => setChatBoxSettings({...chatBoxSettings, layoutType: e.target.value})}
                 >
-                  <option value="copilot">Copilot - Chat style layout</option>
-                  <option value="document">Document - Traditional report layout</option>
+                  {LAYOUT_OPTIONS.filter((option) =>
+                    ['copilot', 'document'].includes(option.value)
+                  ).map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {formatOptionLabel(option.label, option.description)}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -296,7 +312,7 @@ export default function MobileLayout({
       {/* Footer */}
       <footer className="mt-auto py-3 px-4 text-center border-t border-gray-800/40 bg-gray-900/80 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-5 mb-3">
-          <a href="https://gptr.dev" target="_blank" className="text-gray-400 hover:text-teal-400 transition-colors">
+          <a href="https://gptr.dev" target="_blank" className="text-gray-400 hover:text-primary-400 transition-colors">
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
               viewBox="0 0 24 24" 
@@ -340,7 +356,7 @@ export default function MobileLayout({
           </a>
         </div>
         <div className="text-xs text-gray-400">
-          © {new Date().getFullYear()} agent Researcher. All rights reserved.
+          © {new Date().getFullYear()} agent Researcher。保留所有权利。
         </div>
       </footer>
       

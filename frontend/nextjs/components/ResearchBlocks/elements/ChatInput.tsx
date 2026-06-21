@@ -68,7 +68,7 @@ const ChatInput: FC<TChatInputProps> = ({
     <div className="relative">
       {/* Gradient ring with balanced glow */}
       <div 
-        className={`absolute -inset-0.5 rounded-lg bg-gradient-to-r from-[#0cdbb6]/50 via-[#1fd0f0]/40 to-[#06dbee]/50 blur-sm opacity-40 transition-opacity duration-300 ${isFocused || promptValue ? 'opacity-60' : 'opacity-30'}`}
+        className={`absolute -inset-0.5 rounded-lg bg-gradient-to-r from-[#5b5bff]/50 via-[#00d4ff]/40 to-[#00d4ff]/50 blur-sm opacity-40 transition-opacity duration-300 ${isFocused || promptValue ? 'opacity-60' : 'opacity-30'}`}
       />
       
       {/* Ambient glow effect - balanced size and opacity */}
@@ -91,7 +91,7 @@ const ChatInput: FC<TChatInputProps> = ({
         }}
       >
         {/* Inner gradient blur effect - balanced opacity */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-teal-400/4 via-indigo-400/4 to-purple-400/4 blur-xl opacity-25 animate-pulse pointer-events-none"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary-400/4 via-indigo-400/4 to-purple-400/4 blur-xl opacity-25 animate-pulse pointer-events-none"></div>
         
         <textarea
           placeholder={placeholder}
@@ -112,7 +112,7 @@ const ChatInput: FC<TChatInputProps> = ({
         <button
           disabled={disabled || !promptValue.trim()}
           type="submit"
-          className="relative flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-md bg-teal-600 hover:bg-gradient-to-br hover:from-[#0cdbb6] hover:via-[#1fd0f0] hover:to-[#06dbee] transition-all duration-300 disabled:opacity-50 disabled:hover:bg-teal-600/75 z-10 before:absolute before:inset-0 before:rounded-md before:bg-gradient-to-r before:from-teal-300/15 before:to-cyan-300/15 before:opacity-0 before:transition-opacity before:hover:opacity-100 before:-z-10 disabled:before:opacity-0 group"
+          className="relative flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-md bg-primary-600 hover:bg-gradient-to-br hover:from-[#5b5bff] hover:via-[#00d4ff] hover:to-[#00d4ff] transition-all duration-300 disabled:opacity-50 disabled:hover:bg-primary-600/75 z-10 before:absolute before:inset-0 before:rounded-md before:bg-gradient-to-r before:from-primary-300/15 before:to-accent/15 before:opacity-0 before:transition-opacity before:hover:opacity-100 before:-z-10 disabled:before:opacity-0 group"
         >
           {disabled && (
             <div className="absolute inset-0 flex items-center justify-center">

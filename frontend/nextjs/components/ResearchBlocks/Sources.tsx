@@ -30,7 +30,7 @@ export default function Sources({
                 href={source.url} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-gray-800/60 text-gray-300 hover:text-teal-300 hover:bg-gray-800/90 rounded border border-gray-700/40 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-gray-800/60 text-gray-300 hover:text-primary-300 hover:bg-gray-800/90 rounded border border-gray-700/40 transition-colors"
                 title={source.name}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

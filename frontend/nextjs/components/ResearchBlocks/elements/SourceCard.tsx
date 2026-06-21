@@ -20,7 +20,7 @@ const SourceCard = ({ source }: { source: { name: string; url: string } }) => {
   }, [source.url]);
 
   return (
-    <div className="flex h-[79px] w-full items-center gap-3 rounded-lg border border-solid border-gray-700/30 bg-gray-800/30 backdrop-blur-sm shadow-sm px-3 py-2 md:w-auto hover:border-teal-500/30 transition-colors duration-200">
+    <div className="flex h-[79px] w-full items-center gap-3 rounded-lg border border-solid border-gray-700/30 bg-gray-800/30 backdrop-blur-sm shadow-sm px-3 py-2 md:w-auto hover:border-primary/30 transition-colors duration-200">
       
         <img
           src={imageSrc}
@@ -39,7 +39,7 @@ const SourceCard = ({ source }: { source: { name: string; url: string } }) => {
           target="_blank"
           rel="noopener noreferrer"
           href={source.url}
-          className="truncate text-sm font-light text-gray-300/60 hover:text-teal-300/80 transition-colors"
+          className="truncate text-sm font-light text-gray-300/60 hover:text-primary-300/80 transition-colors"
           title={source.url}
         >
           {formattedUrl}

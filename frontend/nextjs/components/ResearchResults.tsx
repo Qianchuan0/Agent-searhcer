@@ -3,7 +3,8 @@ import Question from './ResearchBlocks/Question';
 import Report from './ResearchBlocks/Report';
 import Sources from './ResearchBlocks/Sources';
 import ImageSection from './ResearchBlocks/ImageSection';
-import SubQuestions from './ResearchBlocks/elements/SubQuestions';
+import WorkflowStepper from './workflow/WorkflowStepper';
+import QuestionProgress from './research/QuestionProgress';
 import LogsSection from './ResearchBlocks/LogsSection';
 import AccessReport from './ResearchBlocks/AccessReport';
 import { preprocessOrderedData } from '../utils/dataProcessing';
@@ -65,18 +66,13 @@ export const ResearchResults: React.FC<ResearchResultsProps> = ({
   const finalReport = groupedData
     .filter(data => data.type === 'reportBlock')
     .pop();
-  const subqueriesComponent = groupedData.find(data => data.content === 'subqueries');
 
   return (
     <>
       {initialQuestion && <Question question={initialQuestion.content} />}
+      <WorkflowStepper orderedData={orderedData} />
       {orderedData.length > 0 && <LogsSection logs={allLogs} />}
-      {subqueriesComponent && (
-        <SubQuestions
-          metadata={subqueriesComponent.metadata}
-          handleClickSuggestion={handleClickSuggestion}
-        />
-      )}
+      <QuestionProgress orderedData={orderedData} handleClickSuggestion={handleClickSuggestion} />
       {sourceComponents}
       {imageComponents}
       {finalReport && <Report answer={finalReport.content} researchId={currentResearchId} />}

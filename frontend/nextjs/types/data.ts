@@ -48,6 +48,12 @@ export interface ChatBoxSettings {
   mcp_enabled: boolean;
   mcp_configs: MCPConfig[];
   mcp_strategy?: string;
+  // 设计图右侧设置面板新增字段（可选，兼容旧 localStorage）
+  research_depth?: number;
+  visualize_results?: boolean;
+  autosave?: boolean;
+  notify?: boolean;
+  agent_count?: number;
 }
 
 export interface Domain {

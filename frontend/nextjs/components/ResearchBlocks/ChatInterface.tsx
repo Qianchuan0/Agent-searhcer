@@ -102,13 +102,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {renderedMessages.length === 0 ? (
           <div className="text-center p-8 rounded-lg bg-gradient-to-r from-gray-900/5 to-gray-800/5 border border-gray-300/20 backdrop-blur-sm relative overflow-hidden">
             {/* Ambient decoration */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/5 via-purple-500/5 to-cyan-500/5 blur-xl opacity-30 animate-pulse"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-purple-500/5 to-accent/5 blur-xl opacity-30 animate-pulse"></div>
             
             {/* Icon */}
             <div className="w-16 h-16 mx-auto mb-4 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-400/30 to-cyan-400/30 rounded-full blur-md animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-400/30 to-accent/30 rounded-full blur-md animate-pulse"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                 </svg>
               </div>
@@ -130,14 +130,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div 
                   className={`max-w-[80%] p-3 rounded-lg shadow-md ${
                     msg.role === 'user' 
-                      ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-teal-500/20' 
+                      ? 'bg-gradient-to-r from-primary to-primary-600 text-white shadow-primary/20' 
                       : 'bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-gray-700/30'
                   } relative overflow-hidden group transition-all duration-300 hover:shadow-lg`}
                 >
                   {/* Add subtle animated gradient effect */}
                   <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300 ${
                     msg.role === 'user' 
-                      ? 'bg-gradient-to-br from-teal-300/40 via-transparent to-cyan-300/30' 
+                      ? 'bg-gradient-to-br from-primary-300/40 via-transparent to-accent/30' 
                       : 'bg-gradient-to-br from-indigo-400/30 via-transparent to-purple-400/20'
                   } animate-pulse pointer-events-none`}></div>
                   

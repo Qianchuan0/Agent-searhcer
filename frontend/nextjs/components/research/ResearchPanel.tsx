@@ -65,7 +65,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
           {onShareClick && currentResearchId && (
             <button 
               onClick={onShareClick}
-              className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-md flex items-center gap-1.5 transition-colors border border-teal-500/50 text-sm shadow-sm hover:shadow-teal-500/20"
+              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-600 text-white rounded-md flex items-center gap-1.5 transition-colors border border-primary/50 text-sm shadow-sm hover:shadow-primary/20"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
@@ -80,7 +80,7 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
           {!isCopilotVisible && setIsCopilotVisible && (
             <button 
               onClick={() => setIsCopilotVisible(true)}
-              className={`px-3 py-1.5 bg-teal-800/70 hover:bg-teal-700 text-teal-100 rounded-md flex items-center gap-1.5 transition-colors border border-teal-700/60 text-sm ${researchComplete ? 'animate-chat-button-pulse' : ''}`}
+              className={`px-3 py-1.5 bg-primary-600/70 hover:bg-primary-600 text-primary-300 rounded-md flex items-center gap-1.5 transition-colors border border-primary-600/60 text-sm ${researchComplete ? 'animate-chat-button-pulse' : ''}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -129,11 +129,11 @@ const ResearchPanel: React.FC<ResearchPanelProps> = ({
       <style jsx global>{`
         @keyframes chat-button-pulse {
           0%, 100% {
-            box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4);
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
             transform: scale(1);
           }
           70% {
-            box-shadow: 0 0 0 10px rgba(20, 184, 166, 0);
+            box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
             transform: scale(1.02);
           }
         }

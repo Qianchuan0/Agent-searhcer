@@ -39,10 +39,10 @@ const ChatMessage = memo(({
     // User question - now with teal/turquoise color to match theme
     return (
       <div className="flex items-start justify-end space-x-2 py-1 max-w-full animate-fade-in">
-        <div className="flex-1 bg-teal-600/80 border border-teal-500/50 rounded-2xl px-4 py-3 text-sm text-white font-medium ml-10 shadow-md">
+        <div className="flex-1 bg-primary-600/80 border border-primary/50 rounded-2xl px-4 py-3 text-sm text-white font-medium ml-10 shadow-md">
           {content}
         </div>
-        <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0 shadow-md">
+        <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center flex-shrink-0 shadow-md">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="9" r="5" />
             <path d="M3,20 c0,-4 8,-4 8,-4 s8,0 8,4" />
@@ -107,7 +107,7 @@ const ChatMessage = memo(({
                           href={source.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-teal-300 hover:text-teal-200 hover:underline truncate block"
+                          className="text-primary-300 hover:text-primary-300 hover:underline truncate block"
                         >
                           {source.title || source.url}
                         </a>
@@ -151,7 +151,7 @@ const ChatMessage = memo(({
                       href={source.url} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-800/60 text-gray-300 hover:text-teal-300 hover:bg-gray-800/90 rounded border border-gray-700/40 transition-colors"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-800/60 text-gray-300 hover:text-primary-300 hover:bg-gray-800/90 rounded border border-gray-700/40 transition-colors"
                       title={source.name}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -467,7 +467,7 @@ const MobileChatPanel: React.FC<MobileChatPanelProps> = ({
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}
               placeholder="Ask a research question..."
-              className="w-full px-4 py-3 pr-14 bg-gray-800/90 border border-gray-700 focus:border-teal-500 rounded-xl resize-none text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 pr-14 bg-gray-800/90 border border-gray-700 focus:border-primary rounded-xl resize-none text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all shadow-sm"
               style={{ minHeight: '48px', maxHeight: '120px' }}
               disabled={isProcessingChat || isSubmitting}
             />
@@ -477,7 +477,7 @@ const MobileChatPanel: React.FC<MobileChatPanelProps> = ({
               disabled={!chatPromptValue.trim() || isProcessingChat || isSubmitting}
               className={`absolute right-3 bottom-[50%] translate-y-[50%] w-9 h-9 flex items-center justify-center rounded-full ${
                 chatPromptValue.trim() && !isProcessingChat && !isSubmitting
-                  ? 'bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-400 hover:to-teal-500 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-primary to-primary-600 hover:from-primary-400 hover:to-primary text-white shadow-md'
                   : 'bg-gray-700 text-gray-400 cursor-not-allowed'
               } transition-all duration-200`}
             >
@@ -499,7 +499,7 @@ const MobileChatPanel: React.FC<MobileChatPanelProps> = ({
             {onNewResearch && (
               <button 
                 onClick={onNewResearch} 
-                className="ml-2 text-teal-400 hover:text-teal-300 hover:underline font-medium"
+                className="ml-2 text-primary-400 hover:text-primary-300 hover:underline font-medium"
               >
                 Start new research
               </button>

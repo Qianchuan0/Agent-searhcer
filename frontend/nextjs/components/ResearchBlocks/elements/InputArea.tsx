@@ -36,7 +36,7 @@ const InputArea: FC<TInputAreaProps> = ({
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const placeholder = "Enter your topic, question, or area of interest...";
+  const placeholder = "输入你想研究的主题、问题，或关注的方向...";
 
   // Auto-focus the textarea when component mounts
   useEffect(() => {
@@ -86,7 +86,7 @@ const InputArea: FC<TInputAreaProps> = ({
     <div className="relative">
       {/* Gradient ring - subtle effect */}
       <div 
-        className={`absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[#0cdbb6]/50 via-[#1fd0f0]/40 to-[#06dbee]/50 blur-md opacity-45 transition-opacity duration-300 ${isFocused || promptValue ? 'opacity-55' : 'opacity-35'}`}
+        className={`absolute -inset-0.5 rounded-xl bg-gradient-to-r from-[#5b5bff]/50 via-[#00d4ff]/40 to-[#00d4ff]/50 blur-md opacity-45 transition-opacity duration-300 ${isFocused || promptValue ? 'opacity-55' : 'opacity-35'}`}
       />
       
       {/* Ambient glow effect */}
@@ -108,7 +108,7 @@ const InputArea: FC<TInputAreaProps> = ({
         }}
       >
         {/* Inner gradient blur effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-teal-400/4 via-indigo-400/4 to-purple-400/4 blur-xl opacity-25 animate-pulse pointer-events-none"></div>
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary-400/4 via-indigo-400/4 to-purple-400/4 blur-xl opacity-25 animate-pulse pointer-events-none"></div>
         
         <textarea
           placeholder={placeholder}
@@ -129,7 +129,7 @@ const InputArea: FC<TInputAreaProps> = ({
         <button
           disabled={disabled}
           type="submit"
-          className="relative flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-md bg-teal-600 hover:bg-gradient-to-br hover:from-[#0cdbb6] hover:via-[#1fd0f0] hover:to-[#06dbee] transition-all duration-300 disabled:opacity-50 disabled:hover:bg-teal-600/75 z-10 before:absolute before:inset-0 before:rounded-md before:bg-gradient-to-r before:from-teal-300/20 before:to-cyan-300/20 before:opacity-0 before:transition-opacity before:hover:opacity-100 before:-z-10 disabled:before:opacity-0 group"
+          className="relative flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-md bg-primary-600 hover:bg-gradient-to-br hover:from-[#5b5bff] hover:via-[#00d4ff] hover:to-[#00d4ff] transition-all duration-300 disabled:opacity-50 disabled:hover:bg-primary-600/75 z-10 before:absolute before:inset-0 before:rounded-md before:bg-gradient-to-r before:from-primary-300/20 before:to-accent/20 before:opacity-0 before:transition-opacity before:hover:opacity-100 before:-z-10 disabled:before:opacity-0 group"
         >
           {disabled && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -141,10 +141,10 @@ const InputArea: FC<TInputAreaProps> = ({
             {/* Glow effect on hover */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/20 rounded-full blur-md"></div>
             
-            <img
-              src={"/img/arrow-narrow-right.svg"}
-              alt="search"
-              width={20}
+              <img
+                src={"/img/arrow-narrow-right.svg"}
+                alt="提交研究问题"
+                width={20}
               height={20}
               className={`${disabled ? "invisible" : ""} transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:filter group-hover:drop-shadow-[0_0_3px_rgba(255,255,255,0.7)]`}
             />

@@ -225,7 +225,7 @@ export default function MobileResearchContent({
             )}
             {!localLoading && !localProcessing && currentResearchId && (
               <>
-                <div className="w-2 h-2 rounded-full bg-teal-500 mr-2"></div>
+                <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
                 <span className="text-xs text-gray-300">Research complete</span>
               </>
             )}
@@ -235,7 +235,7 @@ export default function MobileResearchContent({
           {!localLoading && !localProcessing && currentResearchId && onShareClick && (
             <button 
               onClick={onShareClick}
-              className="flex items-center text-xs px-3 py-1.5 rounded-md bg-gradient-to-r from-teal-700/70 to-teal-600/70 text-teal-200 border border-teal-600/40 shadow-sm"
+              className="flex items-center text-xs px-3 py-1.5 rounded-md bg-gradient-to-r from-primary-600/70 to-primary-600/70 text-primary-300 border border-primary-600/40 shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>

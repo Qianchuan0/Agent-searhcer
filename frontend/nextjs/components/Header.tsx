@@ -45,7 +45,7 @@ const Header = ({ loading, isStopped, showResult, onStop, onNewResearch, isCopil
             {(isStopped || !loading) && showResult && !isCopilotMode && (
               <button
                 onClick={onNewResearch}
-                className="flex items-center justify-center px-4 sm:px-6 h-9 sm:h-10 text-sm text-white bg-teal-500 rounded-full hover:bg-teal-600 transform hover:scale-105 transition-all duration-200 shadow-lg whitespace-nowrap min-w-[120px]"
+                className="flex items-center justify-center px-4 sm:px-6 h-9 sm:h-10 text-sm text-white bg-primary rounded-full hover:bg-primary-600 transform hover:scale-105 transition-all duration-200 shadow-lg whitespace-nowrap min-w-[120px]"
               >
                 New Research
               </button>

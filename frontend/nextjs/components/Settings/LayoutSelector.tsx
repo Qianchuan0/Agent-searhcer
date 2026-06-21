@@ -1,4 +1,5 @@
 import React, { ChangeEvent } from 'react';
+import { LAYOUT_OPTIONS, formatOptionLabel } from '@/utils/uiLabels';
 
 interface LayoutSelectorProps {
   layoutType: string;
@@ -8,7 +9,7 @@ interface LayoutSelectorProps {
 export default function LayoutSelector({ layoutType, onLayoutChange }: LayoutSelectorProps) {
   return (
     <div className="form-group">
-      <label htmlFor="layoutType" className="agent_question">Layout Type </label>
+      <label htmlFor="layoutType" className="agent_question">布局方式</label>
       <select 
         name="layoutType" 
         id="layoutType" 
@@ -17,8 +18,13 @@ export default function LayoutSelector({ layoutType, onLayoutChange }: LayoutSel
         className="form-control-static"
         required
       >
-        <option value="research">Research - Traditional research layout with detailed results</option>
-        <option value="copilot">Copilot - Side-by-side research and chat interface</option>
+        {LAYOUT_OPTIONS.filter((option) =>
+          ['research', 'copilot'].includes(option.value)
+        ).map((option) => (
+          <option key={option.value} value={option.value}>
+            {formatOptionLabel(option.label, option.description)}
+          </option>
+        ))}
       </select>
     </div>
   );

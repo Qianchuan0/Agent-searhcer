@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { markdownToHtml } from '../../../helpers/markdownHelper';
 import ImagesAlbum from '../../Images/ImagesAlbum';
 import Image from "next/image";
+import { translateAgentLogText } from '@/utils/uiLabels';
 
 type ProcessedData = {
   field: string;
@@ -71,7 +72,7 @@ const LogMessage: React.FC<LogMessageProps> = ({ logs }) => {
               className="w-full max-w-4xl mx-auto rounded-lg pt-2 mt-3 pb-2 px-4 bg-gray-900 shadow-md"
             >
               <p className="py-3 text-base leading-relaxed text-white dark:text-white">
-                {log.text}
+                {translateAgentLogText(log.text)}
               </p>
             </div>
           );

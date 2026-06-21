@@ -53,7 +53,7 @@ const AccessReport: React.FC<AccessReportProps> = ({ accessData, chatBoxSettings
           {accessData.pdf && (
             <a 
               href={getReportLink('pdf')} 
-              className="bg-teal-600 text-white font-medium uppercase text-sm px-6 py-3 rounded-lg shadow-md hover:shadow-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+              className="bg-primary-600 text-white font-medium uppercase text-sm px-6 py-3 rounded-lg shadow-md hover:shadow-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/50 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
               target="_blank"
               rel="noopener noreferrer">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,7 +79,7 @@ const AccessReport: React.FC<AccessReportProps> = ({ accessData, chatBoxSettings
           {chatBoxSettings?.report_type === 'research_report' && accessData.json && (
             <a
               href={getReportLink('json')}
-              className="bg-cyan-600 text-white font-medium uppercase text-sm px-6 py-3 rounded-lg shadow-md hover:shadow-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+              className="bg-accent-600 text-white font-medium uppercase text-sm px-6 py-3 rounded-lg shadow-md hover:shadow-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
               target="_blank"
               rel="noopener noreferrer">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

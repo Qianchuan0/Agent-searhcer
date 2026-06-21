@@ -107,16 +107,16 @@ const Modal: React.FC<ChatBoxProps> = ({ chatBoxSettings, setChatBoxSettings }) 
         >
           <div className="relative">
             {/* Subtle border with hint of glow */}
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-teal-500/20 via-cyan-500/15 to-blue-500/20 rounded-xl blur-sm opacity-50 shadow-sm"></div>
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 via-accent/15 to-accent/20 rounded-xl blur-sm opacity-50 shadow-sm"></div>
             
             {/* Modal content */}
-            <div className="relative flex flex-col rounded-lg overflow-hidden bg-gray-900 border border-gray-800/60 shadow-md hover:shadow-teal-400/10 transition-shadow duration-300">
+            <div className="relative flex flex-col rounded-lg overflow-hidden bg-gray-900 border border-gray-800/60 shadow-md hover:shadow-primary-400/10 transition-shadow duration-300">
               {/* Header with subtler accent */}
               <div className="bg-gray-900 p-5 border-b border-gray-800">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold text-white">
                     <span className="mr-2">⚙️</span>
-                    <span className="text-teal-400">Preferences</span>
+                    <span className="text-primary-400">Preferences</span>
                   </h3>
                   <button
                     className="p-1 ml-auto text-gray-400 hover:text-white transition-colors duration-200"
@@ -153,7 +153,7 @@ const Modal: React.FC<ChatBoxProps> = ({ chatBoxSettings, setChatBoxSettings }) 
                   Cancel
                 </button>
                 <button
-                  className="px-6 py-2.5 text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-gradient-to-br hover:from-teal-500/95 hover:via-cyan-500/90 hover:to-teal-600/95 shadow-sm hover:shadow-teal-400/20 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:ring-offset-1 focus:ring-offset-gray-900"
+                  className="px-6 py-2.5 text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-gradient-to-br hover:from-primary/95 hover:via-accent/90 hover:to-primary-600/95 shadow-sm hover:shadow-primary-400/20 transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-primary focus:ring-offset-1 focus:ring-offset-gray-900"
                   onClick={handleSaveChanges}
                 >
                   Save Changes
@@ -176,7 +176,7 @@ const Modal: React.FC<ChatBoxProps> = ({ chatBoxSettings, setChatBoxSettings }) 
   return (
     <div className="settings">
       <button
-        className="bg-gray-900 text-white px-6 py-3 rounded-lg shadow-sm hover:shadow-teal-400/10 transition-all duration-300 border border-gray-800 hover:border-teal-500/30"
+        className="bg-gray-900 text-white px-6 py-3 rounded-lg shadow-sm hover:shadow-primary-400/10 transition-all duration-300 border border-gray-800 hover:border-primary/30"
         type="button"
         onClick={() => setShowModal(true)}
       >

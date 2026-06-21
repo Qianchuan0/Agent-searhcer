@@ -8,13 +8,9 @@ import { ChatBoxSettings, Data, ChatData, ChatMessage, QuestionData } from "@/ty
 import { toast } from "react-hot-toast";
 import { getAppropriateLayout } from "@/utils/getLayout";
 
-import ResearchPageLayout from "@/components/layouts/ResearchPageLayout";
-import CopilotLayout from "@/components/layouts/CopilotLayout";
 import ResearchContent from "@/components/research/ResearchContent";
-import CopilotResearchContent from "@/components/research/CopilotResearchContent";
 import NotFoundContent from "@/components/research/NotFoundContent";
 import LoadingDots from "@/components/LoadingDots";
-import ResearchSidebar from "@/components/ResearchSidebar";
 
 // Import mobile components
 import MobileResearchContent from "@/components/mobile/MobileResearchContent";
@@ -536,59 +532,26 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
     setChatBoxSettings,
     toastOptions,
     children: (
-      <div className="relative">
-        <ResearchSidebar
-          history={history}
-          onSelectResearch={handleSelectResearch}
-          onNewResearch={handleNewResearch}
-          onDeleteResearch={deleteResearch}
-          isOpen={sidebarOpen}
-          toggleSidebar={toggleSidebar}
-        />
-        
-        {chatBoxSettings.layoutType === 'copilot' ? (
-          <CopilotResearchContent
-            orderedData={orderedData}
-            answer={answer}
-            allLogs={allLogs}
-            chatBoxSettings={chatBoxSettings}
-            loading={false}
-            isStopped={isStopped}
-            promptValue=""
-            chatPromptValue={chatPromptValue}
-            setPromptValue={() => {}}
-            setChatPromptValue={setChatPromptValue}
-            handleDisplayResult={() => {}}
-            handleChat={handleChat}
-            handleClickSuggestion={() => {}}
-            currentResearchId={currentResearchId || undefined}
-            onShareClick={handleCopyUrl}
-            isProcessingChat={isProcessingChat}
-            onNewResearch={handleNewResearch}
-          />
-        ) : (
-          <ResearchContent
-            showResult={true}
-            orderedData={orderedData}
-            answer={answer}
-            allLogs={allLogs}
-            chatBoxSettings={chatBoxSettings}
-            loading={false}
-            isInChatMode={true}
-            isStopped={isStopped}
-            promptValue=""
-            chatPromptValue={chatPromptValue}
-            setPromptValue={() => {}}
-            setChatPromptValue={setChatPromptValue}
-            handleDisplayResult={() => {}}
-            handleChat={handleChat}
-            handleClickSuggestion={() => {}}
-            currentResearchId={currentResearchId || undefined}
-            onShareClick={handleCopyUrl}
-            isProcessingChat={isProcessingChat}
-          />
-        )}
-      </div>
+      <ResearchContent
+        showResult={true}
+        orderedData={orderedData}
+        answer={answer}
+        allLogs={allLogs}
+        chatBoxSettings={chatBoxSettings}
+        loading={false}
+        isInChatMode={true}
+        isStopped={isStopped}
+        promptValue=""
+        chatPromptValue={chatPromptValue}
+        setPromptValue={() => {}}
+        setChatPromptValue={setChatPromptValue}
+        handleDisplayResult={() => {}}
+        handleChat={handleChat}
+        handleClickSuggestion={() => {}}
+        currentResearchId={currentResearchId || undefined}
+        onShareClick={handleCopyUrl}
+        isProcessingChat={isProcessingChat}
+      />
     )
   });
 } 

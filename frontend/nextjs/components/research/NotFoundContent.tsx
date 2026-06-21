@@ -17,7 +17,7 @@ export default function NotFoundContent({ onNewResearch }: NotFoundContentProps)
         <p className="text-gray-400 mb-6">The research report you&apos;re looking for doesn&apos;t seem to exist or might have been deleted.</p>
         <button 
           onClick={onNewResearch}
-          className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-md transition-colors"
+          className="px-5 py-2.5 bg-primary-600 hover:bg-primary-600 text-white rounded-md transition-colors"
         >
           Return to Home
         </button>

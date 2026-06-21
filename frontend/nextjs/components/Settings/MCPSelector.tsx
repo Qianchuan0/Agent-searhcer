@@ -332,15 +332,15 @@ const MCPSelector: React.FC<MCPSelectorProps> = ({
               </div>
               <small className="text-muted" style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem', marginTop: '8px', display: 'block', lineHeight: '1.4' }}>
                 Paste your MCP servers configuration as a JSON array. Each server should have properties like{' '}
-                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>name</code>,{' '}
-                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>command</code>,{' '}
-                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>args</code>, and optional{' '}
-                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#0d9488' }}>env</code> variables.{' '}
+                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#5b5bff' }}>name</code>,{' '}
+                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#5b5bff' }}>command</code>,{' '}
+                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#5b5bff' }}>args</code>, and optional{' '}
+                <code style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '2px 4px', borderRadius: '3px', color: '#5b5bff' }}>env</code> variables.{' '}
                 <a
                   href="#"
                   className="settings mcp-example-link"
                   onClick={(e) => { e.preventDefault(); showExample(); }}
-                  style={{ color: '#0d9488', textDecoration: 'none', fontWeight: '500' }}
+                  style={{ color: '#5b5bff', textDecoration: 'none', fontWeight: '500' }}
                 >
                   See example →
                 </a>

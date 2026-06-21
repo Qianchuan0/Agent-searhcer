@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useResearchHistoryContext } from '@/hooks/ResearchHistoryContext';
+import { useResearchStore } from '@/stores/researchStore';
 import { useScrollHandler } from '@/hooks/useScrollHandler';
 import { startLanggraphResearch } from '../components/Langgraph/Langgraph';
 import findDifferences from '../helpers/findDifferences';
@@ -13,12 +14,7 @@ import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from 'uuid';
 
 import Hero from "@/components/Hero";
-import ResearchPageLayout from "@/components/layouts/ResearchPageLayout";
-import CopilotLayout from "@/components/layouts/CopilotLayout";
 import ResearchContent from "@/components/research/ResearchContent";
-import CopilotResearchContent from "@/components/research/CopilotResearchContent";
-import HumanFeedback from "@/components/HumanFeedback";
-import ResearchSidebar from "@/components/ResearchSidebar";
 import { getAppropriateLayout } from "@/utils/getLayout";
 
 // Import the mobile components
@@ -27,54 +23,29 @@ import MobileResearchContent from "@/components/mobile/MobileResearchContent";
 
 export default function Home() {
   const router = useRouter();
-  const [promptValue, setPromptValue] = useState("");
-  const [chatPromptValue, setChatPromptValue] = useState("");
-  const [showResult, setShowResult] = useState(false);
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [isInChatMode, setIsInChatMode] = useState(false);
-  const [chatBoxSettings, setChatBoxSettings] = useState<ChatBoxSettings>(() => {
-    // Default settings
-    const defaultSettings = {
-      report_type: "research_report",
-      report_source: "web",
-      tone: "Objective",
-      domains: [],
-      defaultReportType: "research_report",
-      layoutType: 'copilot',
-      mcp_enabled: false,
-      mcp_configs: [],
-      mcp_strategy: "fast",
-    };
+  // 状态统一由 Zustand store 管理（迁移自原 17 个 useState）
+  // store 的 setter 签名与 React.useState 完全兼容，下游 setXxx(...) 调用零改动
+  const {
+    promptValue, setPromptValue,
+    chatPromptValue, setChatPromptValue,
+    showResult, setShowResult,
+    answer, setAnswer,
+    loading, setLoading,
+    isInChatMode, setIsInChatMode,
+    chatBoxSettings, setChatBoxSettings,
+    question, setQuestion,
+    orderedData, setOrderedData,
+    showHumanFeedback, setShowHumanFeedback,
+    questionForHuman, setQuestionForHuman,
+    allLogs, setAllLogs,
+    isStopped, setIsStopped,
+    sidebarOpen, setSidebarOpen,
+    currentResearchId, setCurrentResearchId,
+    isMobile, setIsMobile,
+    isProcessingChat, setIsProcessingChat,
+  } = useResearchStore();
 
-    // Try to load all settings from localStorage
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('chatBoxSettings');
-      if (savedSettings) {
-        try {
-          const parsedSettings = JSON.parse(savedSettings);
-          return {
-            ...defaultSettings,
-            ...parsedSettings, // Override defaults with saved settings
-          };
-        } catch (e) {
-          console.error('Error parsing saved settings:', e);
-        }
-      }
-    }
-    return defaultSettings;
-  });
-  const [question, setQuestion] = useState("");
-  const [orderedData, setOrderedData] = useState<Data[]>([]);
-  const [showHumanFeedback, setShowHumanFeedback] = useState(false);
-  const [questionForHuman, setQuestionForHuman] = useState<true | false>(false);
-  const [allLogs, setAllLogs] = useState<any[]>([]);
-  const [isStopped, setIsStopped] = useState(false);
   const mainContentRef = useRef<HTMLDivElement>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [currentResearchId, setCurrentResearchId] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isProcessingChat, setIsProcessingChat] = useState(false);
 
   // Use our custom scroll handler
   const { showScrollButton, scrollToBottom } = useScrollHandler(mainContentRef);
@@ -915,22 +886,11 @@ export default function Home() {
           showScrollButton,
           onScrollToBottom: scrollToBottom,
           children: (
-            <>
-              <ResearchSidebar
-                history={history}
-                onSelectResearch={handleSelectResearch}
-                onNewResearch={handleStartNewResearch}
-                onDeleteResearch={deleteResearch}
-                isOpen={sidebarOpen}
-                toggleSidebar={toggleSidebar}
-              />
-              
-              <Hero
-                promptValue={promptValue}
-                setPromptValue={setPromptValue}
-                handleDisplayResult={handleDisplayResult}
-              />
-            </>
+            <Hero
+              promptValue={promptValue}
+              setPromptValue={setPromptValue}
+              handleDisplayResult={handleDisplayResult}
+            />
           )
         })
       ) : (
@@ -945,70 +905,27 @@ export default function Home() {
           setChatBoxSettings,
           mainContentRef,
           children: (
-            <div className="relative">
-              <ResearchSidebar
-                history={history}
-                onSelectResearch={handleSelectResearch}
-                onNewResearch={handleStartNewResearch}
-                onDeleteResearch={deleteResearch}
-                isOpen={sidebarOpen}
-                toggleSidebar={toggleSidebar}
-              />
-              
-              {chatBoxSettings.layoutType === 'copilot' ? (
-                <CopilotResearchContent
-                  orderedData={orderedData}
-                  answer={answer}
-                  allLogs={allLogs}
-                  chatBoxSettings={chatBoxSettings}
-                  loading={loading}
-                  isStopped={isStopped}
-                  promptValue={promptValue}
-                  chatPromptValue={chatPromptValue}
-                  setPromptValue={setPromptValue}
-                  setChatPromptValue={setChatPromptValue}
-                  handleDisplayResult={handleDisplayResult}
-                  handleChat={handleChat}
-                  handleClickSuggestion={handleClickSuggestion}
-                  currentResearchId={currentResearchId || undefined}
-                  onShareClick={currentResearchId ? handleCopyUrl : undefined}
-                  reset={reset}
-                  isProcessingChat={isProcessingChat}
-                  onNewResearch={handleStartNewResearch}
-                  toggleSidebar={toggleSidebar}
-                />
-              ) : (
-                <ResearchContent
-                  showResult={showResult}
-                  orderedData={orderedData}
-                  answer={answer}
-                  allLogs={allLogs}
-                  chatBoxSettings={chatBoxSettings}
-                  loading={loading}
-                  isInChatMode={isInChatMode}
-                  isStopped={isStopped}
-                  promptValue={promptValue}
-                  chatPromptValue={chatPromptValue}
-                  setPromptValue={setPromptValue}
-                  setChatPromptValue={setChatPromptValue}
-                  handleDisplayResult={handleDisplayResult}
-                  handleChat={handleChat}
-                  handleClickSuggestion={handleClickSuggestion}
-                  currentResearchId={currentResearchId || undefined}
-                  onShareClick={currentResearchId ? handleCopyUrl : undefined}
-                  reset={reset}
-                  isProcessingChat={isProcessingChat}
-                />
-              )}
-              
-              {showHumanFeedback && false && (
-                <HumanFeedback
-                  questionForHuman={questionForHuman}
-                  websocket={socket}
-                  onFeedbackSubmit={handleFeedbackSubmit}
-                />
-              )}
-            </div>
+            <ResearchContent
+              showResult={showResult}
+              orderedData={orderedData}
+              answer={answer}
+              allLogs={allLogs}
+              chatBoxSettings={chatBoxSettings}
+              loading={loading}
+              isInChatMode={isInChatMode}
+              isStopped={isStopped}
+              promptValue={promptValue}
+              chatPromptValue={chatPromptValue}
+              setPromptValue={setPromptValue}
+              setChatPromptValue={setChatPromptValue}
+              handleDisplayResult={handleDisplayResult}
+              handleChat={handleChat}
+              handleClickSuggestion={handleClickSuggestion}
+              currentResearchId={currentResearchId || undefined}
+              onShareClick={currentResearchId ? handleCopyUrl : undefined}
+              reset={reset}
+              isProcessingChat={isProcessingChat}
+            />
           )
         })
       )}

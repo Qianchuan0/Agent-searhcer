@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { ResearchHistoryItem, Data, ChatMessage } from '../types/data';
+import { ResearchHistoryItem, Data, ChatMessage, AdoptedMemorySnapshot } from '../types/data';
+
+interface ReportPersistenceOptions {
+  adoptedMemoryIds?: string[];
+  adoptedMemoriesSnapshot?: AdoptedMemorySnapshot[];
+}
 
 export const useResearchHistory = () => {
   const [history, setHistory] = useState<ResearchHistoryItem[]>([]);
@@ -113,7 +118,9 @@ export const useResearchHistory = () => {
               question: report.question,
               answer: report.answer,
               orderedData: report.orderedData || [],
-              chatMessages: report.chatMessages || []
+              chatMessages: report.chatMessages || [],
+              adopted_memory_ids: report.adopted_memory_ids || [],
+              adopted_memories_snapshot: report.adopted_memories_snapshot || [],
             }),
           });
           
@@ -154,7 +161,12 @@ export const useResearchHistory = () => {
   }, []); // Empty dependency array - only run once on mount
   
   // Save new research
-  const saveResearch = async (question: string, answer: string, orderedData: Data[]) => {
+  const saveResearch = async (
+    question: string,
+    answer: string,
+    orderedData: Data[],
+    options: ReportPersistenceOptions = {}
+  ) => {
     try {
       // Generate a unique ID
       const id = uuidv4();
@@ -170,7 +182,9 @@ export const useResearchHistory = () => {
           question,
           answer,
           orderedData,
-          chatMessages: []
+          chatMessages: [],
+          adopted_memory_ids: options.adoptedMemoryIds || [],
+          adopted_memories_snapshot: options.adoptedMemoriesSnapshot || [],
         }),
       });
       
@@ -185,6 +199,8 @@ export const useResearchHistory = () => {
           answer,
           orderedData,
           chatMessages: [],
+          adopted_memory_ids: options.adoptedMemoryIds || [],
+          adopted_memories_snapshot: options.adoptedMemoriesSnapshot || [],
           timestamp: Date.now(),
         };
         
@@ -213,6 +229,8 @@ export const useResearchHistory = () => {
         answer,
         orderedData,
         chatMessages: [],
+        adopted_memory_ids: options.adoptedMemoryIds || [],
+        adopted_memories_snapshot: options.adoptedMemoriesSnapshot || [],
         timestamp: Date.now(),
       };
       
@@ -232,7 +250,12 @@ export const useResearchHistory = () => {
   };
   
   // Update existing research
-  const updateResearch = async (id: string, answer: string, orderedData: Data[]) => {
+  const updateResearch = async (
+    id: string,
+    answer: string,
+    orderedData: Data[],
+    options: ReportPersistenceOptions = {}
+  ) => {
     try {
       // Update in backend
       const response = await fetch(`/api/reports/${id}`, {
@@ -242,7 +265,11 @@ export const useResearchHistory = () => {
         },
         body: JSON.stringify({
           answer,
-          orderedData
+          orderedData,
+          ...(options.adoptedMemoryIds ? { adopted_memory_ids: options.adoptedMemoryIds } : {}),
+          ...(options.adoptedMemoriesSnapshot
+            ? { adopted_memories_snapshot: options.adoptedMemoriesSnapshot }
+            : {}),
         }),
       });
       
@@ -253,7 +280,17 @@ export const useResearchHistory = () => {
       // Update local state
       setHistory(prev => 
         prev.map(item => 
-          item.id === id ? { ...item, answer, orderedData, timestamp: Date.now() } : item
+          item.id === id
+            ? {
+                ...item,
+                answer,
+                orderedData,
+                adopted_memory_ids: options.adoptedMemoryIds ?? item.adopted_memory_ids,
+                adopted_memories_snapshot:
+                  options.adoptedMemoriesSnapshot ?? item.adopted_memories_snapshot,
+                timestamp: Date.now(),
+              }
+            : item
         )
       );
       
@@ -262,7 +299,17 @@ export const useResearchHistory = () => {
       if (localHistory) {
         const parsedHistory = JSON.parse(localHistory);
         const updatedHistory = parsedHistory.map((item: any) => 
-          item.id === id ? { ...item, answer, orderedData, timestamp: Date.now() } : item
+          item.id === id
+            ? {
+                ...item,
+                answer,
+                orderedData,
+                adopted_memory_ids: options.adoptedMemoryIds ?? item.adopted_memory_ids,
+                adopted_memories_snapshot:
+                  options.adoptedMemoriesSnapshot ?? item.adopted_memories_snapshot,
+                timestamp: Date.now(),
+              }
+            : item
         );
         localStorage.setItem('researchHistory', JSON.stringify(updatedHistory));
       }
@@ -274,7 +321,17 @@ export const useResearchHistory = () => {
       // Update local state anyway
       setHistory(prev => 
         prev.map(item => 
-          item.id === id ? { ...item, answer, orderedData, timestamp: Date.now() } : item
+          item.id === id
+            ? {
+                ...item,
+                answer,
+                orderedData,
+                adopted_memory_ids: options.adoptedMemoryIds ?? item.adopted_memory_ids,
+                adopted_memories_snapshot:
+                  options.adoptedMemoriesSnapshot ?? item.adopted_memories_snapshot,
+                timestamp: Date.now(),
+              }
+            : item
         )
       );
       
@@ -283,7 +340,17 @@ export const useResearchHistory = () => {
       if (localHistory) {
         const parsedHistory = JSON.parse(localHistory);
         const updatedHistory = parsedHistory.map((item: any) => 
-          item.id === id ? { ...item, answer, orderedData, timestamp: Date.now() } : item
+          item.id === id
+            ? {
+                ...item,
+                answer,
+                orderedData,
+                adopted_memory_ids: options.adoptedMemoryIds ?? item.adopted_memory_ids,
+                adopted_memories_snapshot:
+                  options.adoptedMemoriesSnapshot ?? item.adopted_memories_snapshot,
+                timestamp: Date.now(),
+              }
+            : item
         );
         localStorage.setItem('researchHistory', JSON.stringify(updatedHistory));
       }

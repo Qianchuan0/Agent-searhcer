@@ -125,6 +125,8 @@ export interface ResearchHistoryItem {
   timestamp: number;
   orderedData: Data[];
   chatMessages?: ChatMessage[];
+  adopted_memory_ids?: string[];
+  adopted_memories_snapshot?: AdoptedMemorySnapshot[];
 }
 
 export type MemoryType =
@@ -150,6 +152,7 @@ export interface MemoryItem {
   scope: 'local';
   type: MemoryType;
   title: string;
+  core_claim?: string | null;
   content: string;
   summary: string;
   tags: string[];
@@ -179,6 +182,7 @@ export interface MemorySuggestion {
   id: string;
   type: 'user_preference' | 'research_interest' | 'research_knowledge' | 'saved_context';
   title: string;
+  core_claim?: string | null;
   content: string;
   reason: string;
   source_excerpt: string;
@@ -205,6 +209,7 @@ export interface MemorySuggestionsResponse {
 export interface MemoryCreateRequest {
   type: MemoryType;
   title: string;
+  core_claim?: string | null;
   content: string;
   summary?: string;
   tags: string[];
@@ -236,4 +241,16 @@ export interface ReportMemoryResponse {
   memories: MemoryItem[];
   findings: ResearchFinding[];
   metadata: Record<string, unknown>;
+}
+
+export interface AdoptedMemorySnapshot {
+  id: string;
+  title: string;
+  core_claim?: string | null;
+  summary: string;
+  reportId: string;
+  score: number;
+  confidence: MemoryConfidence;
+  createdAt: string;
+  staleness: 'fresh' | 'possibly_stale' | 'stale' | null;
 }

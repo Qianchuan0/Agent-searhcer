@@ -2,14 +2,30 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useResearchHistory } from './useResearchHistory';
-import { ResearchHistoryItem, Data, ChatMessage } from '../types/data';
+import { ResearchHistoryItem, Data, ChatMessage, AdoptedMemorySnapshot } from '../types/data';
 
 // Define the shape of our context
 interface ResearchHistoryContextType {
   history: ResearchHistoryItem[];
   loading: boolean;
-  saveResearch: (question: string, answer: string, orderedData: Data[]) => Promise<string>;
-  updateResearch: (id: string, answer: string, orderedData: Data[]) => Promise<boolean>;
+  saveResearch: (
+    question: string,
+    answer: string,
+    orderedData: Data[],
+    options?: {
+      adoptedMemoryIds?: string[];
+      adoptedMemoriesSnapshot?: AdoptedMemorySnapshot[];
+    }
+  ) => Promise<string>;
+  updateResearch: (
+    id: string,
+    answer: string,
+    orderedData: Data[],
+    options?: {
+      adoptedMemoryIds?: string[];
+      adoptedMemoriesSnapshot?: AdoptedMemorySnapshot[];
+    }
+  ) => Promise<boolean>;
   getResearchById: (id: string) => Promise<ResearchHistoryItem | null>;
   deleteResearch: (id: string) => Promise<boolean>;
   addChatMessage: (id: string, message: ChatMessage) => Promise<boolean>;

@@ -230,6 +230,12 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
             answer: localItem.answer || '',
             orderedData: Array.isArray(localItem.orderedData) ? JSON.parse(JSON.stringify(localItem.orderedData)) : [],
             chatMessages: Array.isArray(localItem.chatMessages) ? JSON.parse(JSON.stringify(localItem.chatMessages)) : [],
+            adopted_memory_ids: Array.isArray(localItem.adopted_memory_ids)
+              ? JSON.parse(JSON.stringify(localItem.adopted_memory_ids))
+              : [],
+            adopted_memories_snapshot: Array.isArray(localItem.adopted_memories_snapshot)
+              ? JSON.parse(JSON.stringify(localItem.adopted_memories_snapshot))
+              : [],
           };
           
           const saveResponse = await fetch('/api/reports', {
@@ -354,6 +360,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
       await createMemoryItem({
         type: suggestion.type,
         title: suggestion.title,
+        core_claim: suggestion.core_claim || null,
         content: suggestion.content,
         summary: suggestion.content,
         tags: suggestion.tags || [],

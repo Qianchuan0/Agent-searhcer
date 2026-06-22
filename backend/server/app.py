@@ -239,6 +239,8 @@ async def create_or_update_report(request: Request):
             "answer": data.get("answer"),
             "orderedData": data.get("orderedData") or [],
             "chatMessages": data.get("chatMessages") or [],
+            "adopted_memory_ids": data.get("adopted_memory_ids") or [],
+            "adopted_memories_snapshot": data.get("adopted_memories_snapshot") or [],
             "timestamp": timestamp,
         }
 

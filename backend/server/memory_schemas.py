@@ -31,6 +31,7 @@ class MemoryItem(BaseModel):
     scope: Literal["local"] = "local"
     type: MemoryType
     title: str
+    core_claim: Optional[str] = None
     content: str
     summary: str
     tags: List[str] = Field(default_factory=list)
@@ -60,6 +61,7 @@ class MemorySuggestion(BaseModel):
     id: str
     type: Literal["user_preference", "research_interest", "research_knowledge", "saved_context"]
     title: str
+    core_claim: Optional[str] = None
     content: str
     reason: str
     source_excerpt: str
@@ -77,6 +79,7 @@ class MemorySettings(BaseModel):
 class MemoryCreateRequest(BaseModel):
     type: MemoryType
     title: str
+    core_claim: Optional[str] = None
     content: str
     summary: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
@@ -87,6 +90,7 @@ class MemoryCreateRequest(BaseModel):
 
 class MemoryUpdateRequest(BaseModel):
     title: Optional[str] = None
+    core_claim: Optional[str] = None
     content: Optional[str] = None
     summary: Optional[str] = None
     tags: Optional[List[str]] = None

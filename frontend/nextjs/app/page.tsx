@@ -25,6 +25,7 @@ import {
   MemorySuggestion,
   ResearchClassificationResponse,
   MemorySearchResult,
+  AdoptedMemorySnapshot,
 } from '../types/data';
 import { preprocessOrderedData } from '../utils/dataProcessing';
 import { toast } from "react-hot-toast";
@@ -88,18 +89,7 @@ export default function Home() {
   } | null>(null);
   const suggestionRequestRef = useRef<string | null>(null);
   const dismissedSuggestionReportsRef = useRef<Set<string>>(new Set());
-  const selectedBridgeMemoriesRef = useRef<
-    Array<{
-      id: string;
-      title: string;
-      summary: string;
-      reportId: string;
-      score: number;
-      confidence: string;
-      createdAt: string;
-      staleness: string | null;
-    }>
-  >([]);
+  const selectedBridgeMemoriesRef = useRef<AdoptedMemorySnapshot[]>([]);
 
   // Use our custom scroll handler
   const { showScrollButton, scrollToBottom } = useScrollHandler(mainContentRef);
@@ -152,6 +142,11 @@ export default function Home() {
     startupLogTimersRef.current.forEach((timerId) => clearTimeout(timerId));
     startupLogTimersRef.current = [];
   };
+
+  const getAdoptedMemoryPayload = () => ({
+    adoptedMemoryIds: selectedBridgeMemoriesRef.current.map((entry) => entry.id),
+    adoptedMemoriesSnapshot: selectedBridgeMemoriesRef.current,
+  });
 
   const buildMemoryGroundedQuestion = (
     researchQuestion: string,
@@ -768,7 +763,8 @@ export default function Home() {
         await saveResearch(
           baseQuestion,  // question
           '',           // empty answer initially
-          initialOrderedData  // ordered data
+          initialOrderedData,  // ordered data
+          getAdoptedMemoryPayload()
         );
         
         // Make direct API call to get response
@@ -812,7 +808,8 @@ export default function Home() {
           await updateResearch(
             newResearchId,    // id
             chatAnswer,       // answer
-            updatedOrderedData // ordered data
+            updatedOrderedData, // ordered data
+            getAdoptedMemoryPayload()
           );
           
           // Set current research ID so we can continue the conversation
@@ -922,6 +919,7 @@ export default function Home() {
     selectedBridgeMemoriesRef.current = selectedMemories.map((entry) => ({
       id: entry.item.id,
       title: entry.item.title,
+      core_claim: entry.item.core_claim || null,
       summary: entry.item.summary,
       reportId: entry.item.source.report_id || "unknown",
       score: entry.score,
@@ -957,6 +955,7 @@ export default function Home() {
       await createMemoryItem({
         type: suggestion.type,
         title: suggestion.title,
+        core_claim: suggestion.core_claim || null,
         content: suggestion.content,
         summary: suggestion.content,
         tags: suggestion.tags || [],
@@ -1010,7 +1009,8 @@ export default function Home() {
       await saveResearch(
         newQuestion,  // question
         '',           // empty answer initially
-        initialOrderedData  // ordered data
+        initialOrderedData,  // ordered data
+        getAdoptedMemoryPayload()
       );
       
       // Make direct API call instead of using websockets
@@ -1063,7 +1063,8 @@ export default function Home() {
         await updateResearch(
           mobileResearchId,
           responseContent,
-          updatedOrderedData
+          updatedOrderedData,
+          getAdoptedMemoryPayload()
         );
         
         // Set current research ID for future interactions
@@ -1298,7 +1299,7 @@ export default function Home() {
             const currentResearch = await getResearchById(currentResearchId);
             if (currentResearch && (currentResearch.answer !== answer || JSON.stringify(currentResearch.orderedData) !== JSON.stringify(orderedData))) {
               isUpdatingRef.current = true;
-              await updateResearch(currentResearchId, answer, orderedData);
+              await updateResearch(currentResearchId, answer, orderedData, getAdoptedMemoryPayload());
               // Reset the flag after a short delay to allow state updates to complete
               setTimeout(() => {
                 isUpdatingRef.current = false;
@@ -1317,7 +1318,7 @@ export default function Home() {
           if (isNewResearch) {
             isUpdatingRef.current = true;
             try {
-              const newId = await saveResearch(question, answer, orderedData);
+              const newId = await saveResearch(question, answer, orderedData, getAdoptedMemoryPayload());
               setCurrentResearchId(newId);
               
               // Don't navigate to the research page URL anymore

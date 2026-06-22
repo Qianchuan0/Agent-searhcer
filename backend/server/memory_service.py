@@ -72,6 +72,7 @@ class MemoryService:
             id=f"memory_{uuid4().hex}",
             type=request.type,
             title=request.title.strip(),
+            core_claim=self._normalize_core_claim(request.type, request.core_claim, request.title, request.content),
             content=request.content.strip(),
             summary=(request.summary or request.content.strip())[:180],
             tags=self._dedupe_tags(request.tags),
@@ -95,11 +96,18 @@ class MemoryService:
 
         new_title = request.title.strip() if request.title is not None else item.title
         new_content = request.content.strip() if request.content is not None else item.content
+        next_type = item.type
         self._raise_if_sensitive(new_title, new_content)
 
         updated = item.model_copy(
             update={
                 "title": new_title,
+                "core_claim": self._normalize_core_claim(
+                    next_type,
+                    request.core_claim if request.core_claim is not None else item.core_claim,
+                    new_title,
+                    new_content,
+                ),
                 "content": new_content,
                 "summary": (request.summary if request.summary is not None else item.summary)[:180],
                 "tags": self._dedupe_tags(request.tags) if request.tags is not None else item.tags,
@@ -151,6 +159,7 @@ class MemoryService:
             id=existing_id or f"memory_{uuid4().hex}",
             type="report_index",
             title=question[:120] or f"Report {report_id}",
+            core_claim=self._build_core_claim(question, answer),
             content=content,
             summary=summary,
             tags=tags,
@@ -229,6 +238,7 @@ class MemoryService:
                     id=f"suggestion_{uuid4().hex}",
                     type="research_knowledge",
                     title=self._truncate(question or "Research takeaway", 80),
+                    core_claim=self._build_core_claim(question, answer),
                     content=summary,
                     reason="This report appears reusable as future research context.",
                     source_excerpt=excerpt,
@@ -341,23 +351,25 @@ class MemoryService:
         )
 
     def _extract_adopted_memories(self, report: dict) -> tuple[List[str], List[ResearchFinding]]:
-        ordered_data = report.get("orderedData") or []
-        if not isinstance(ordered_data, list):
-            return [], []
+        selected_memories = report.get("adopted_memories_snapshot") or []
+        if not isinstance(selected_memories, list) or not selected_memories:
+            ordered_data = report.get("orderedData") or []
+            if not isinstance(ordered_data, list):
+                return [], []
 
-        selected_memories = []
-        for entry in reversed(ordered_data):
-            if not isinstance(entry, dict):
-                continue
-            metadata = entry.get("metadata")
-            if not isinstance(metadata, dict):
-                continue
-            if metadata.get("stage") != "memory_bridge_confirmed":
-                continue
-            raw_selected = metadata.get("selected_memories")
-            if isinstance(raw_selected, list):
-                selected_memories = raw_selected
-                break
+            selected_memories = []
+            for entry in reversed(ordered_data):
+                if not isinstance(entry, dict):
+                    continue
+                metadata = entry.get("metadata")
+                if not isinstance(metadata, dict):
+                    continue
+                if metadata.get("stage") != "memory_bridge_confirmed":
+                    continue
+                raw_selected = metadata.get("selected_memories")
+                if isinstance(raw_selected, list):
+                    selected_memories = raw_selected
+                    break
 
         findings: List[ResearchFinding] = []
         adopted_ids: List[str] = []
@@ -372,7 +384,7 @@ class MemoryService:
                 ResearchFinding(
                     id=f"finding_{uuid4().hex}",
                     memory_id=memory_id,
-                    claim=str(raw.get("summary") or raw.get("title") or "").strip(),
+                    claim=str(raw.get("core_claim") or raw.get("summary") or raw.get("title") or "").strip(),
                     evidence_summary=str(raw.get("summary") or "").strip(),
                     source_report_id=str(raw.get("reportId") or "unknown"),
                     confidence=str(raw.get("confidence") or "medium"),
@@ -396,7 +408,7 @@ class MemoryService:
         return ResearchFinding(
             id=f"finding_{uuid4().hex}",
             memory_id=item.id,
-            claim=item.summary,
+            claim=item.core_claim or item.summary,
             evidence_summary=self._truncate(item.content, 220),
             source_report_id=item.source.report_id,
             confidence=item.confidence,
@@ -405,7 +417,9 @@ class MemoryService:
         )
 
     def _score_item(self, item: MemoryItem, query_tokens: Sequence[str]) -> tuple[float, List[str]]:
-        haystack = " ".join([item.title, item.summary, item.content, " ".join(item.tags)]).lower()
+        haystack = " ".join(
+            [item.title, item.core_claim or "", item.summary, item.content, " ".join(item.tags)]
+        ).lower()
         matched_terms = [token for token in query_tokens if token and token in haystack]
         if not matched_terms:
             return 0.0, []
@@ -445,6 +459,33 @@ class MemoryService:
     def _build_summary(self, question: str, answer: str) -> str:
         summary_source = answer.strip() or question.strip()
         return self._truncate(re.sub(r"\s+", " ", summary_source), 180)
+
+    def _build_core_claim(self, question: str, answer: str) -> str:
+        source = answer.strip() or question.strip()
+        if not source:
+            return ""
+
+        normalized = re.sub(r"\s+", " ", source).strip()
+        if normalized.startswith("#"):
+            normalized = normalized.lstrip("#").strip()
+
+        sentence_split = re.split(r"(?<=[。！？.!?])\s+|\n+", normalized)
+        first_sentence = next((segment.strip() for segment in sentence_split if segment.strip()), normalized)
+        return self._truncate(first_sentence, 120)
+
+    def _normalize_core_claim(
+        self,
+        memory_type: str,
+        core_claim: str | None,
+        title: str,
+        content: str,
+    ) -> str | None:
+        cleaned = core_claim.strip() if isinstance(core_claim, str) else ""
+        if cleaned:
+            return self._truncate(cleaned, 120)
+        if memory_type in {"research_knowledge", "report_index"}:
+            return self._build_core_claim(title, content)
+        return None
 
     def _summarize_answer(self, answer: str) -> str:
         stripped = re.sub(r"\s+", " ", answer).strip()

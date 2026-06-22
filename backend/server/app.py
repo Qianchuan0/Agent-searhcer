@@ -35,6 +35,16 @@ from utils import write_md_to_word, write_md_to_pdf
 from gpt_researcher.utils.enum import Tone
 from chat.chat import ChatAgentWithMemory
 
+from server.memory_schemas import (
+    MemoryCreateRequest,
+    MemorySearchRequest,
+    MemorySettingsUpdateRequest,
+    MemorySuggestionRequest,
+    MemoryUpdateRequest,
+    ResearchClassificationRequest,
+)
+from server.memory_service import MemoryService
+from server.memory_store import MemoryStore
 from server.report_store import ReportStore
 
 # MongoDB services removed - no database persistence needed
@@ -144,6 +154,8 @@ app.mount("/site", StaticFiles(directory=frontend_dir), name="site")
 manager = WebSocketManager()
 
 report_store = ReportStore(Path(os.getenv('REPORT_STORE_PATH', os.path.join('data', 'reports.json'))))
+memory_store = MemoryStore(Path(os.getenv("MEMORY_STORE_PATH", os.path.join("data", "memory", "memory.json"))))
+memory_service = MemoryService(memory_store, report_store)
 
 # Constants
 DOC_PATH = os.getenv("DOC_PATH", "./my-docs")
@@ -229,6 +241,7 @@ async def create_or_update_report(request: Request):
         }
 
         await report_store.upsert_report(research_id, report)
+        await memory_service.index_report(research_id)
         return {"success": True, "id": research_id}
     except Exception as e:
         logger.error(f"Error processing report creation: {e}")
@@ -252,6 +265,7 @@ async def update_report(research_id: str, request: Request):
     }
 
     await report_store.upsert_report(research_id, updated)
+    await memory_service.index_report(research_id)
     return {"success": True, "id": research_id}
 
 
@@ -293,6 +307,70 @@ async def add_report_chat_message(research_id: str, request: Request):
 
     await report_store.upsert_report(research_id, updated)
     return {"success": True, "id": research_id}
+
+
+@app.get("/api/memory/settings")
+async def get_memory_settings():
+    return await memory_service.get_settings()
+
+
+@app.put("/api/memory/settings")
+async def update_memory_settings(request: MemorySettingsUpdateRequest):
+    return await memory_service.update_settings(request)
+
+
+@app.get("/api/memory/items")
+async def list_memory_items(memory_type: str | None = None, status: str | None = None, tag: str | None = None):
+    items = await memory_service.list_items(memory_type=memory_type, status=status, tag=tag)
+    return {"items": items}
+
+
+@app.post("/api/memory/items")
+async def create_memory_item(request: MemoryCreateRequest):
+    try:
+        item = await memory_service.create_item(request)
+        return {"item": item}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.patch("/api/memory/items/{memory_id}")
+async def update_memory_item(memory_id: str, request: MemoryUpdateRequest):
+    try:
+        item = await memory_service.update_item(memory_id, request)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if item is None:
+        raise HTTPException(status_code=404, detail="Memory item not found")
+    return {"item": item}
+
+
+@app.delete("/api/memory/items/{memory_id}")
+async def delete_memory_item(memory_id: str):
+    deleted = await memory_service.delete_item(memory_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Memory item not found")
+    return {"success": True}
+
+
+@app.post("/api/memory/search")
+async def search_memory(request: MemorySearchRequest):
+    return await memory_service.search(request)
+
+
+@app.post("/api/memory/suggestions")
+async def generate_memory_suggestions(request: MemorySuggestionRequest):
+    return await memory_service.generate_suggestions(request)
+
+
+@app.post("/api/memory/classify-research")
+async def classify_research(request: ResearchClassificationRequest):
+    return await memory_service.classify_research(request)
+
+
+@app.get("/api/reports/{research_id}/memory")
+async def get_report_memory(research_id: str):
+    return await memory_service.get_report_memory(research_id)
 
 
 async def write_report(research_request: ResearchRequest, research_id: str = None):
@@ -472,15 +550,3 @@ async def research_report_chat(research_id: str, request: Request):
     except Exception as e:
         logger.error(f"Error in research report chat: {str(e)}", exc_info=True)
         return {"error": str(e)}
-
-@app.put("/api/reports/{research_id}")
-async def update_report(research_id: str, request: Request):
-    """Update a specific research report by ID - no database configured."""
-    logger.debug(f"Update requested for report {research_id} - no database configured, not persisted")
-    return {"success": True, "id": research_id}
-
-@app.delete("/api/reports/{research_id}")
-async def delete_report(research_id: str):
-    """Delete a specific research report by ID - no database configured."""
-    logger.debug(f"Delete requested for report {research_id} - no database configured, nothing to delete")
-    return {"success": True, "id": research_id}

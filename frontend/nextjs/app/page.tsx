@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useResearchMemory } from "@/hooks/useResearchMemory";
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useResearchHistoryContext } from '@/hooks/ResearchHistoryContext';
 import { useResearchStore } from '@/stores/researchStore';
@@ -21,6 +22,9 @@ import {
   ChatData,
   HumanReviewRequest,
   LangGraphRunContext,
+  MemorySuggestion,
+  ResearchClassificationResponse,
+  MemorySearchResult,
 } from '../types/data';
 import { preprocessOrderedData } from '../utils/dataProcessing';
 import { toast } from "react-hot-toast";
@@ -71,6 +75,15 @@ export default function Home() {
   const [clarificationPayload, setClarificationPayload] = useState<ClarificationPayload | null>(null);
   const [pendingResearchQuestion, setPendingResearchQuestion] = useState("");
   const [isClarificationLoading, setIsClarificationLoading] = useState(false);
+  const [memorySuggestions, setMemorySuggestions] = useState<MemorySuggestion[]>([]);
+  const [savingMemorySuggestionId, setSavingMemorySuggestionId] = useState<string | null>(null);
+  const [pendingMemoryBridge, setPendingMemoryBridge] = useState<ResearchClassificationResponse | null>(null);
+  const [pendingMemoryBridgeQuestion, setPendingMemoryBridgeQuestion] = useState<{
+    researchQuestion: string;
+    displayQuestion: string;
+  } | null>(null);
+  const suggestionRequestRef = useRef<string | null>(null);
+  const dismissedSuggestionReportsRef = useRef<Set<string>>(new Set());
 
   // Use our custom scroll handler
   const { showScrollButton, scrollToBottom } = useScrollHandler(mainContentRef);
@@ -100,6 +113,12 @@ export default function Home() {
     addChatMessage,
     getChatMessages
   } = useResearchHistoryContext();
+  const {
+    settings: memorySettings,
+    createItem: createMemoryItem,
+    classifyResearch,
+    getSuggestions,
+  } = useResearchMemory();
 
   // Only initialize the WebSocket hook reference, don't connect automatically
   const websocketRef = useRef(useWebSocket(
@@ -116,6 +135,62 @@ export default function Home() {
   const clearStartupLogTimers = () => {
     startupLogTimersRef.current.forEach((timerId) => clearTimeout(timerId));
     startupLogTimersRef.current = [];
+  };
+
+  const buildMemoryGroundedQuestion = (
+    researchQuestion: string,
+    relatedMemories: MemorySearchResult[]
+  ) => {
+    if (!relatedMemories.length) {
+      return researchQuestion;
+    }
+
+    const contextLines = relatedMemories.slice(0, 3).map((entry, index) => {
+      const sourceReport = entry.item.source.report_id || "unknown";
+      return `${index + 1}. ${entry.item.title}\n摘要：${entry.item.summary}\n来源报告：${sourceReport}`;
+    });
+
+    return [
+      researchQuestion,
+      "",
+      "历史研究上下文：",
+      ...contextLines,
+      "",
+      "请把以上内容当作带来源的历史结论，而不是当前已验证事实。",
+      "请在本次报告中明确区分：哪些是历史结论复用，哪些是本次新增发现。",
+    ].join("\n");
+  };
+
+  const maybePrepareMemoryBridge = async (
+    researchQuestion: string,
+    displayQuestion: string
+  ) => {
+    if (isMobile || !memorySettings?.enabled) {
+      return false;
+    }
+
+    try {
+      const classification = await classifyResearch(displayQuestion);
+      if (!classification.related_memories.length || classification.relation === "new_topic") {
+        return false;
+      }
+
+      clearStartupLogTimers();
+      setLoading(false);
+      setPendingMemoryBridge(classification);
+      setPendingMemoryBridgeQuestion({ researchQuestion, displayQuestion });
+      setOrderedData((prevOrder) => [
+        ...prevOrder,
+        createStatusEvent('planning_research', '发现相关历史研究，请先确认是否承接旧结论。', {
+          source: 'client',
+          stage: 'memory_bridge',
+        }),
+      ]);
+      return true;
+    } catch (error) {
+      console.error("Error preparing memory bridge:", error);
+      return false;
+    }
   };
 
   const queueInitialResearchLogs = (newQuestion: string) => {
@@ -224,6 +299,9 @@ export default function Home() {
     setQuestionForHuman(null);
     setClarificationPayload(null);
     setPendingResearchQuestion(newQuestion);
+    setPendingMemoryBridge(null);
+    setPendingMemoryBridgeQuestion(null);
+    setMemorySuggestions([]);
     queueClarificationLogs(newQuestion);
 
     if (isMobile) {
@@ -625,7 +703,7 @@ export default function Home() {
     }
   };
 
-  const startConfirmedResearch = async (
+  const runConfirmedResearch = async (
     researchQuestion: string,
     displayQuestion?: string
   ) => {
@@ -642,6 +720,8 @@ export default function Home() {
     setShowHumanFeedback(false);
     setQuestionForHuman(null);
     setClarificationPayload(null);
+    setPendingMemoryBridge(null);
+    setPendingMemoryBridgeQuestion(null);
     queueInitialResearchLogs(baseQuestion);
 
     // For mobile, use a simplified approach without websockets
@@ -754,6 +834,24 @@ export default function Home() {
     }
   };
 
+  const startConfirmedResearch = async (
+    researchQuestion: string,
+    displayQuestion?: string,
+    options?: { skipMemoryBridge?: boolean }
+  ) => {
+    const baseQuestion = displayQuestion || pendingResearchQuestion || researchQuestion;
+    setMemorySuggestions([]);
+
+    if (!options?.skipMemoryBridge) {
+      const bridgeShown = await maybePrepareMemoryBridge(researchQuestion, baseQuestion);
+      if (bridgeShown) {
+        return;
+      }
+    }
+
+    await runConfirmedResearch(researchQuestion, baseQuestion);
+  };
+
   const handleDisplayResult = async (newQuestion: string) => {
     await requestClarification(newQuestion);
   };
@@ -781,6 +879,63 @@ export default function Home() {
     );
 
     await startConfirmedResearch(finalQuestion, pendingResearchQuestion);
+  };
+
+  const handleUseMemoryBridge = async () => {
+    if (!pendingMemoryBridgeQuestion || !pendingMemoryBridge) {
+      return;
+    }
+
+    const groundedQuestion = buildMemoryGroundedQuestion(
+      pendingMemoryBridgeQuestion.researchQuestion,
+      pendingMemoryBridge.related_memories
+    );
+
+    await runConfirmedResearch(groundedQuestion, pendingMemoryBridgeQuestion.displayQuestion);
+  };
+
+  const handleSkipMemoryBridge = async () => {
+    if (!pendingMemoryBridgeQuestion) {
+      return;
+    }
+
+    await runConfirmedResearch(
+      pendingMemoryBridgeQuestion.researchQuestion,
+      pendingMemoryBridgeQuestion.displayQuestion
+    );
+  };
+
+  const handleSaveMemorySuggestion = async (suggestion: MemorySuggestion) => {
+    setSavingMemorySuggestionId(suggestion.id);
+    try {
+      await createMemoryItem({
+        type: suggestion.type,
+        title: suggestion.title,
+        content: suggestion.content,
+        summary: suggestion.content,
+        tags: suggestion.tags || [],
+        source: suggestion.source,
+        confidence: suggestion.confidence,
+      });
+      setMemorySuggestions((prev) => prev.filter((item) => item.id !== suggestion.id));
+      toast.success("已保存到长期记忆");
+    } catch (error: any) {
+      console.error("Error saving memory suggestion:", error);
+      toast.error(error?.message || "保存长期记忆失败");
+    } finally {
+      setSavingMemorySuggestionId(null);
+    }
+  };
+
+  const handleDismissMemorySuggestion = (suggestionId: string) => {
+    setMemorySuggestions((prev) => prev.filter((item) => item.id !== suggestionId));
+  };
+
+  const handleDismissAllMemorySuggestions = () => {
+    if (currentResearchId) {
+      dismissedSuggestionReportsRef.current.add(currentResearchId);
+    }
+    setMemorySuggestions([]);
   };
 
   // Mobile-specific implementation for research
@@ -1009,6 +1164,10 @@ export default function Home() {
     setClarificationPayload(null);
     setPendingResearchQuestion("");
     setIsClarificationLoading(false);
+    setPendingMemoryBridge(null);
+    setPendingMemoryBridgeQuestion(null);
+    setMemorySuggestions([]);
+    setSavingMemorySuggestionId(null);
 
     // Reset feedback states
     setShowHumanFeedback(false);
@@ -1132,6 +1291,30 @@ export default function Home() {
     // Call the async function
     saveOrUpdateResearch();
   }, [showResult, loading, answer, question, orderedData, history, saveResearch, updateResearch, isInChatMode, currentResearchId, getResearchById]);
+
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      if (!currentResearchId || !answer || loading || !memorySettings?.enabled) {
+        return;
+      }
+      if (dismissedSuggestionReportsRef.current.has(currentResearchId)) {
+        return;
+      }
+      if (suggestionRequestRef.current === currentResearchId) {
+        return;
+      }
+
+      suggestionRequestRef.current = currentResearchId;
+      try {
+        const suggestions = await getSuggestions(currentResearchId);
+        setMemorySuggestions(suggestions);
+      } catch (error) {
+        console.error("Error loading memory suggestions:", error);
+      }
+    };
+
+    void loadSuggestions();
+  }, [currentResearchId, answer, loading, memorySettings?.enabled, getSuggestions]);
 
   // Handle selecting a research from history
   const handleSelectResearch = async (id: string) => {
@@ -1306,6 +1489,14 @@ export default function Home() {
               onShareClick={currentResearchId ? handleCopyUrl : undefined}
               reset={reset}
               isProcessingChat={isProcessingChat}
+              memorySuggestions={memorySuggestions}
+              onSaveMemorySuggestion={handleSaveMemorySuggestion}
+              onDismissMemorySuggestion={handleDismissMemorySuggestion}
+              onDismissAllMemorySuggestions={handleDismissAllMemorySuggestions}
+              savingMemorySuggestionId={savingMemorySuggestionId}
+              pendingMemoryBridge={pendingMemoryBridge}
+              onUseMemoryBridge={handleUseMemoryBridge}
+              onSkipMemoryBridge={handleSkipMemoryBridge}
             />
           )
         })

@@ -5,11 +5,15 @@ import ChatInput from "@/components/ResearchBlocks/elements/ChatInput";
 import LoadingDots from "@/components/LoadingDots";
 import HumanFeedback from "@/components/HumanFeedback";
 import ResearchClarification from "@/components/research/ResearchClarification";
+import ResearchMemoryBridge from "@/components/research/ResearchMemoryBridge";
+import MemorySuggestionPanel from "@/components/research/MemorySuggestionPanel";
 import {
   ChatBoxSettings,
   ClarificationPayload,
   Data,
   HumanReviewRequest,
+  MemorySuggestion,
+  ResearchClassificationResponse,
 } from "@/types/data";
 import { getLatestStatusMessage } from "@/utils/researchStatus";
 
@@ -45,6 +49,14 @@ interface ResearchContentProps {
   reset?: () => void;
   isProcessingChat?: boolean;
   bottomRef?: React.RefObject<HTMLDivElement>;
+  memorySuggestions?: MemorySuggestion[];
+  onSaveMemorySuggestion?: (suggestion: MemorySuggestion) => void;
+  onDismissMemorySuggestion?: (suggestionId: string) => void;
+  onDismissAllMemorySuggestions?: () => void;
+  savingMemorySuggestionId?: string | null;
+  pendingMemoryBridge?: ResearchClassificationResponse | null;
+  onUseMemoryBridge?: () => void;
+  onSkipMemoryBridge?: () => void;
 }
 
 export default function ResearchContent({
@@ -75,7 +87,15 @@ export default function ResearchContent({
   onShareClick,
   reset,
   isProcessingChat = false,
-  bottomRef
+  bottomRef,
+  memorySuggestions = [],
+  onSaveMemorySuggestion,
+  onDismissMemorySuggestion,
+  onDismissAllMemorySuggestions,
+  savingMemorySuggestionId = null,
+  pendingMemoryBridge = null,
+  onUseMemoryBridge,
+  onSkipMemoryBridge,
 }: ResearchContentProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const internalBottomRef = useRef<HTMLDivElement>(null);
@@ -84,12 +104,12 @@ export default function ResearchContent({
 
   return (
     <div className="flex h-full w-full grow flex-col justify-between">
-      <div className="container w-full space-y-2">
+      <div className="container w-full space-y-4">
         {onShareClick && currentResearchId && (
-          <div className="flex justify-end mb-4">
-            <button 
+          <div className="mb-4 flex justify-end">
+            <button
               onClick={onShareClick}
-              className="px-4 py-2 bg-primary-600 hover:bg-primary-600 text-white rounded-md flex items-center gap-2 transition-colors"
+              className="flex items-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-white transition-colors hover:bg-primary-600"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -98,7 +118,7 @@ export default function ResearchContent({
             </button>
           </div>
         )}
-        
+
         <div className="container space-y-2 task-components">
           <ResearchResults
             orderedData={orderedData}
@@ -113,18 +133,36 @@ export default function ResearchContent({
           />
         </div>
 
+        {memorySuggestions.length > 0 &&
+          onSaveMemorySuggestion &&
+          onDismissMemorySuggestion &&
+          onDismissAllMemorySuggestions && (
+            <MemorySuggestionPanel
+              suggestions={memorySuggestions}
+              savingSuggestionId={savingMemorySuggestionId}
+              onSave={onSaveMemorySuggestion}
+              onDismiss={onDismissMemorySuggestion}
+              onDismissAll={onDismissAllMemorySuggestions}
+            />
+          )}
+
         <div className="pt-1 sm:pt-2" ref={chatContainerRef}></div>
-        {/* Invisible element for scrolling */}
         <div ref={finalBottomRef} />
       </div>
-      
-      <div id="input-area" className="container px-4 lg:px-0 mb-4">
+
+      <div id="input-area" className="container mb-4 px-4 lg:px-0">
         {clarificationPayload && onSkipClarification && onSubmitClarification ? (
           <ResearchClarification
             payload={clarificationPayload}
             onSkip={onSkipClarification}
             onSubmit={onSubmitClarification}
             isSubmitting={isClarificationLoading}
+          />
+        ) : pendingMemoryBridge && onUseMemoryBridge && onSkipMemoryBridge ? (
+          <ResearchMemoryBridge
+            classification={pendingMemoryBridge}
+            onUseMemory={onUseMemoryBridge}
+            onSkipMemory={onSkipMemoryBridge}
           />
         ) : showHumanFeedback && handleFeedbackSubmit ? (
           <HumanFeedback
@@ -153,21 +191,19 @@ export default function ResearchContent({
                 handleSubmit={handleChat}
                 disabled={loading || isProcessingChat}
               />
-            ) : (
-              showResult && reset ? (
-                <InputArea
-                  promptValue={promptValue}
-                  setPromptValue={setPromptValue}
-                  handleSubmit={handleDisplayResult}
-                  disabled={loading}
-                  reset={reset}
-                  isStopped={isStopped}
-                />
-              ) : null
-            )}
+            ) : showResult && reset ? (
+              <InputArea
+                promptValue={promptValue}
+                setPromptValue={setPromptValue}
+                handleSubmit={handleDisplayResult}
+                disabled={loading}
+                reset={reset}
+                isStopped={isStopped}
+              />
+            ) : null}
           </div>
         )}
       </div>
     </div>
   );
-} 
+}

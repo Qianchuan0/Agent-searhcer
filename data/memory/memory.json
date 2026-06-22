@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "enabled": true,
+    "updated_at": "2026-06-22T08:05:24.059985Z"
+  },
+  "items": {
+    "memory_905a943af74f4bb9899b575523e8bb12": {
+      "id": "memory_905a943af74f4bb9899b575523e8bb12",
+      "scope": "local",
+      "type": "report_index",
+      "title": "什么是context Engineer?",
+      "content": "Question: 什么是context Engineer?\n\nSummary:\n# 上下文工程师（Context Engineer）定义与核心职责研究报告",
+      "summary": "# 上下文工程师（Context Engineer）定义与核心职责研究报告 ## 摘要 随着大语言模型（LLM）应用从单轮对话转向复杂的多步智能体和多工具集成系统，一个新的工程角色——**上下文工程师（Context Engineer）**——正在迅速成为AI开发的核心岗位。与传统提示工程师（Prompt Engineer）聚焦于编写单个指令不同，上下...",
+      "tags": [
+        "什么是context",
+        "engineer",
+        "上下文工程师",
+        "context",
+        "定义与核心职责研究报告",
+        "摘要",
+        "随着大语言模型",
+        "llm"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "0b7ea5d2-a9df-4d15-a5b6-421a05ca66b9",
+        "message_id": null,
+        "created_from": "report_index"
+      },
+      "confidence": "high",
+      "status": "active",
+      "created_at": "2026-06-22T08:14:22.060220Z",
+      "updated_at": "2026-06-22T08:14:22.060220Z",
+      "last_used_at": null,
+      "expires_at": null,
+      "embedding_id": null
+    }
+  }
+}

@@ -125,4 +125,106 @@ export interface ResearchHistoryItem {
   timestamp: number;
   orderedData: Data[];
   chatMessages?: ChatMessage[];
-} 
+}
+
+export type MemoryType =
+  | 'user_preference'
+  | 'research_interest'
+  | 'research_knowledge'
+  | 'saved_context'
+  | 'report_index';
+
+export type MemoryStatus = 'active' | 'disabled' | 'deleted';
+export type MemoryConfidence = 'low' | 'medium' | 'high';
+export type ResearchRelation = 'new_topic' | 'follow_up' | 'refresh' | 'compare';
+
+export interface MemorySource {
+  kind: 'report' | 'conversation' | 'user_action';
+  report_id?: string;
+  message_id?: string;
+  created_from?: string;
+}
+
+export interface MemoryItem {
+  id: string;
+  scope: 'local';
+  type: MemoryType;
+  title: string;
+  content: string;
+  summary: string;
+  tags: string[];
+  source: MemorySource;
+  confidence: MemoryConfidence;
+  status: MemoryStatus;
+  created_at: string;
+  updated_at: string;
+  last_used_at?: string | null;
+  expires_at?: string | null;
+  embedding_id?: string | null;
+}
+
+export interface ResearchFinding {
+  id: string;
+  memory_id: string;
+  claim: string;
+  evidence_summary: string;
+  source_report_id: string;
+  source_urls: string[];
+  confidence: MemoryConfidence;
+  generated_at: string;
+  staleness: 'fresh' | 'possibly_stale' | 'stale';
+}
+
+export interface MemorySuggestion {
+  id: string;
+  type: 'user_preference' | 'research_interest' | 'research_knowledge' | 'saved_context';
+  title: string;
+  content: string;
+  reason: string;
+  source_excerpt: string;
+  default_action: 'review';
+  source: MemorySource;
+  tags: string[];
+  confidence: MemoryConfidence;
+}
+
+export interface MemorySettings {
+  enabled: boolean;
+  updated_at: string;
+}
+
+export interface MemoryCreateRequest {
+  type: MemoryType;
+  title: string;
+  content: string;
+  summary?: string;
+  tags: string[];
+  source: MemorySource;
+  confidence?: MemoryConfidence;
+  expires_at?: string | null;
+}
+
+export interface MemorySearchResult {
+  item: MemoryItem;
+  score: number;
+  matched_terms: string[];
+  findings: ResearchFinding[];
+}
+
+export interface MemorySearchResponse {
+  results: MemorySearchResult[];
+}
+
+export interface ResearchClassificationResponse {
+  relation: ResearchRelation;
+  reason: string;
+  suggested_strategy: string;
+  related_memories: MemorySearchResult[];
+}
+
+export interface ReportMemoryResponse {
+  report_id: string;
+  memories: MemoryItem[];
+  findings: ResearchFinding[];
+  metadata: Record<string, unknown>;
+}

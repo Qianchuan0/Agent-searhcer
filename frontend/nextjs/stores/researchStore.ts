@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Data, ChatBoxSettings } from '@/types/data';
+import { Data, ChatBoxSettings, HumanReviewRequest } from '@/types/data';
 
 export type ActiveNav = 'home' | 'conversations' | 'workflow' | 'resources' | 'help';
 
@@ -50,7 +50,7 @@ interface ResearchState {
   question: string;
   orderedData: Data[];
   showHumanFeedback: boolean;
-  questionForHuman: boolean | true;
+  questionForHuman: string | HumanReviewRequest | null;
   allLogs: any[];
   isStopped: boolean;
   sidebarOpen: boolean;
@@ -70,7 +70,7 @@ interface ResearchState {
   setAnswer: SetAction<string>;
   setLoading: SetAction<boolean>;
   setShowHumanFeedback: SetAction<boolean>;
-  setQuestionForHuman: SetAction<boolean | true>;
+  setQuestionForHuman: SetAction<string | HumanReviewRequest | null>;
 
   setSocket: (s: WebSocket | null) => void;
   setPromptValue: SetAction<string>;
@@ -113,7 +113,7 @@ export const useResearchStore = create<ResearchState>()(
         question: '',
         orderedData: [],
         showHumanFeedback: false,
-        questionForHuman: false,
+        questionForHuman: null,
         allLogs: [],
         isStopped: false,
         sidebarOpen: false,
@@ -129,7 +129,7 @@ export const useResearchStore = create<ResearchState>()(
         setAnswer: fset<string>('answer'),
         setLoading: fset<boolean>('loading'),
         setShowHumanFeedback: fset<boolean>('showHumanFeedback'),
-        setQuestionForHuman: fset<boolean | true>('questionForHuman'),
+        setQuestionForHuman: fset<string | HumanReviewRequest | null>('questionForHuman'),
 
         setSocket: (s) => set({ socket: s }),
         setPromptValue: fset<string>('promptValue'),
@@ -160,7 +160,7 @@ export const useResearchStore = create<ResearchState>()(
             orderedData: [],
             allLogs: [],
             showHumanFeedback: false,
-            questionForHuman: false,
+            questionForHuman: null,
             loading: false,
           }),
       };

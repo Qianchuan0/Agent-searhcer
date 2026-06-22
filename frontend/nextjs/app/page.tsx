@@ -6,9 +6,22 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import { useResearchHistoryContext } from '@/hooks/ResearchHistoryContext';
 import { useResearchStore } from '@/stores/researchStore';
 import { useScrollHandler } from '@/hooks/useScrollHandler';
-import { startLanggraphResearch } from '../components/Langgraph/Langgraph';
+import {
+  getLanggraphThreadState,
+  resumeLanggraphResearch,
+  startLanggraphResearch,
+} from '../components/Langgraph/Langgraph';
 import findDifferences from '../helpers/findDifferences';
-import { Data, ChatBoxSettings, QuestionData, ChatMessage, ChatData } from '../types/data';
+import {
+  Data,
+  ChatBoxSettings,
+  ClarificationPayload,
+  QuestionData,
+  ChatMessage,
+  ChatData,
+  HumanReviewRequest,
+  LangGraphRunContext,
+} from '../types/data';
 import { preprocessOrderedData } from '../utils/dataProcessing';
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from 'uuid';
@@ -53,6 +66,11 @@ export default function Home() {
 
   const mainContentRef = useRef<HTMLDivElement>(null);
   const startupLogTimersRef = useRef<number[]>([]);
+  const [pendingLangGraphRun, setPendingLangGraphRun] = useState<LangGraphRunContext | null>(null);
+  const [isSubmittingHumanFeedback, setIsSubmittingHumanFeedback] = useState(false);
+  const [clarificationPayload, setClarificationPayload] = useState<ClarificationPayload | null>(null);
+  const [pendingResearchQuestion, setPendingResearchQuestion] = useState("");
+  const [isClarificationLoading, setIsClarificationLoading] = useState(false);
 
   // Use our custom scroll handler
   const { showScrollButton, scrollToBottom } = useScrollHandler(mainContentRef);
@@ -124,11 +142,249 @@ export default function Home() {
     ];
   };
 
-  const handleFeedbackSubmit = (feedback: string | null) => {
+  const composeClarifiedQuery = (
+    originalQuestion: string,
+    clarification: ClarificationPayload | null,
+    result?: { selections: Record<string, string[]>; note: string }
+  ) => {
+    if (!clarification || !result) {
+      return originalQuestion;
+    }
+
+    const sectionLines = clarification.sections
+      .map((section) => {
+        const selectedIds = result.selections[section.id] || [];
+        if (selectedIds.length === 0) {
+          return null;
+        }
+
+        const labels = section.options
+          .filter((option) => selectedIds.includes(option.id))
+          .map((option) => option.label);
+
+        return labels.length > 0 ? `- ${section.title}: ${labels.join("；")}` : null;
+      })
+      .filter(Boolean);
+
+    const note = result.note.trim();
+
+    if (sectionLines.length === 0 && !note) {
+      return originalQuestion;
+    }
+
+    return [
+      `原始研究问题：${originalQuestion}`,
+      "",
+      "研究方向确认：",
+      ...sectionLines,
+      ...(note ? [`- 补充要求：${note}`] : []),
+      "",
+      "请严格基于以上已确认的研究方向开展研究，并在报告中优先覆盖这些重点。",
+    ].join("\n");
+  };
+
+  const requestClarification = async (newQuestion: string) => {
+    setIsInChatMode(false);
+    setShowResult(true);
+    setLoading(false);
+    setQuestion(newQuestion);
+    setPromptValue("");
+    setAnswer("");
+    setCurrentResearchId(null);
+    setPendingLangGraphRun(null);
+    setShowHumanFeedback(false);
+    setQuestionForHuman(null);
+    setClarificationPayload(null);
+    setPendingResearchQuestion(newQuestion);
+    clearStartupLogTimers();
+    setOrderedData([createQuestionEvent(newQuestion)]);
+
+    if (isMobile) {
+      await startConfirmedResearch(newQuestion);
+      return;
+    }
+
+    setIsClarificationLoading(true);
+
+    try {
+      const response = await fetch("/api/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: newQuestion }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to clarify research direction: ${response.status}`);
+      }
+
+      const payload = (await response.json()) as ClarificationPayload;
+      if (!payload?.sections?.length) {
+        await startConfirmedResearch(newQuestion);
+        return;
+      }
+
+      setClarificationPayload(payload);
+    } catch (error) {
+      console.error("Error requesting clarification:", error);
+      await startConfirmedResearch(newQuestion);
+    } finally {
+      setIsClarificationLoading(false);
+    }
+  };
+
+  const normalizeHumanReview = (payload: any): HumanReviewRequest | null => {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+
+    const sections = Array.isArray(payload.sections)
+      ? payload.sections.filter((item: unknown) => typeof item === 'string')
+      : [];
+
+    if (!sections.length) {
+      return null;
+    }
+
+    return {
+      type: 'plan_review',
+      title: typeof payload.title === 'string' ? payload.title : undefined,
+      message:
+        typeof payload.message === 'string'
+          ? payload.message
+          : '研究大纲已生成，请确认或补充修改意见。',
+      sections,
+      revision_count:
+        typeof payload.revision_count === 'number' ? payload.revision_count : undefined,
+    };
+  };
+
+  const extractInterruptReview = (chunkData: any): HumanReviewRequest | null => {
+    if (!chunkData || typeof chunkData !== 'object') {
+      return null;
+    }
+
+    const interrupts = chunkData.__interrupt__;
+    if (!Array.isArray(interrupts) || interrupts.length === 0) {
+      return null;
+    }
+
+    return normalizeHumanReview(interrupts[0]?.value ?? interrupts[0]);
+  };
+
+  const handleLangGraphStream = async (
+    streamResponse: AsyncIterable<any>,
+    runContext: LangGraphRunContext,
+    appendLangsmithLink = false
+  ) => {
+    if (appendLangsmithLink) {
+      const langsmithGuiLink = `https://smith.langchain.com/studio/thread/${runContext.threadId}?baseUrl=${runContext.host}`;
+      setOrderedData((prevOrder) => [...prevOrder, { type: 'langgraphButton', link: langsmithGuiLink }]);
+    }
+
+    let previousChunk = null;
+    let interruptReview: HumanReviewRequest | null = null;
+    let reportCompleted = false;
+
+    for await (const chunk of streamResponse) {
+      interruptReview = interruptReview ?? extractInterruptReview(chunk.data);
+
+      if (chunk.data?.report != null && chunk.data.report !== "Full report content here") {
+        reportCompleted = true;
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          { ...chunk.data, output: chunk.data.report, type: 'report' },
+        ]);
+        setAnswer(chunk.data.report);
+        setShowHumanFeedback(false);
+        setQuestionForHuman(null);
+        setPendingLangGraphRun(null);
+        setLoading(false);
+      } else if (previousChunk) {
+        const differences = findDifferences(previousChunk, chunk);
+        if (Object.keys(differences).length > 0) {
+          setOrderedData((prevOrder) => [
+            ...prevOrder,
+            { type: 'differences', content: 'differences', output: JSON.stringify(differences) },
+          ]);
+        }
+      }
+
+      previousChunk = chunk;
+    }
+
+    if (reportCompleted) {
+      return;
+    }
+
+    const threadState = await getLanggraphThreadState({
+      threadId: runContext.threadId,
+      langgraphHostUrl: runContext.host,
+    });
+
+    const pendingReview =
+      interruptReview ||
+      normalizeHumanReview((threadState as any)?.values?.__interrupt__?.[0]?.value);
+
+    if (threadState?.next?.includes('human') && pendingReview) {
+      setPendingLangGraphRun(runContext);
+      setQuestionForHuman(pendingReview);
+      setShowHumanFeedback(true);
+      setLoading(false);
+      setOrderedData((prevOrder) => [
+        ...prevOrder,
+        createStatusEvent(
+          'awaiting_human_feedback',
+          LOCAL_RESEARCH_STATUS_MESSAGES.awaitingHumanFeedback,
+          { source: 'client' }
+        ),
+      ]);
+      return;
+    }
+
+    setLoading(false);
+  };
+
+  const handleFeedbackSubmit = async (feedback: string | null) => {
+    if (pendingLangGraphRun) {
+      setIsSubmittingHumanFeedback(true);
+      setShowHumanFeedback(false);
+      setLoading(true);
+      setOrderedData((prevOrder) => [
+        ...prevOrder,
+        createStatusEvent(
+          'resuming_after_feedback',
+          feedback
+            ? LOCAL_RESEARCH_STATUS_MESSAGES.resumingAfterFeedback
+            : '已确认研究大纲，正在继续执行...',
+          { source: 'client' }
+        ),
+      ]);
+
+      try {
+        const { streamResponse } = resumeLanggraphResearch({
+          threadId: pendingLangGraphRun.threadId,
+          assistantId: pendingLangGraphRun.assistantId,
+          feedback: feedback
+            ? {
+                action: 'revise',
+                feedback,
+              }
+            : null,
+          langgraphHostUrl: pendingLangGraphRun.host,
+        });
+
+        await handleLangGraphStream(streamResponse, pendingLangGraphRun);
+      } finally {
+        setIsSubmittingHumanFeedback(false);
+      }
+      return;
+    }
+
     if (socket) {
       socket.send(JSON.stringify({ type: 'human_feedback', content: feedback }));
     }
     setShowHumanFeedback(false);
+    setQuestionForHuman(null);
   };
 
   const handleChat = async (message: string) => {
@@ -328,16 +584,24 @@ export default function Home() {
     }
   };
 
-  const handleDisplayResult = async (newQuestion: string) => {
+  const startConfirmedResearch = async (
+    researchQuestion: string,
+    displayQuestion?: string
+  ) => {
+    const baseQuestion = displayQuestion || pendingResearchQuestion || researchQuestion;
     // Exit chat mode when starting a new research
     setIsInChatMode(false);
     setShowResult(true);
     setLoading(true);
-    setQuestion(newQuestion);
+    setQuestion(baseQuestion);
     setPromptValue("");
     setAnswer("");
     setCurrentResearchId(null); // Reset current research ID for new research
-    queueInitialResearchLogs(newQuestion);
+    setPendingLangGraphRun(null);
+    setShowHumanFeedback(false);
+    setQuestionForHuman(null);
+    setClarificationPayload(null);
+    queueInitialResearchLogs(baseQuestion);
 
     // For mobile, use a simplified approach without websockets
     if (isMobile) {
@@ -346,9 +610,9 @@ export default function Home() {
         const newResearchId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         
         // First save the initial question to history - with proper parameters
-        const initialOrderedData: Data[] = [{ type: 'question', content: newQuestion } as QuestionData];
+        const initialOrderedData: Data[] = [{ type: 'question', content: baseQuestion } as QuestionData];
         await saveResearch(
-          newQuestion,  // question
+          baseQuestion,  // question
           '',           // empty answer initially
           initialOrderedData  // ordered data
         );
@@ -360,7 +624,7 @@ export default function Home() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            messages: [{ role: 'user', content: newQuestion }],
+            messages: [{ role: 'user', content: researchQuestion }],
             // No report since this is a new research
           }),
         });
@@ -386,7 +650,7 @@ export default function Home() {
           
           // Update the research with the answer
           const updatedOrderedData: Data[] = [
-            { type: 'question', content: newQuestion } as QuestionData,
+            { type: 'question', content: baseQuestion } as QuestionData,
             chatData
           ];
           
@@ -429,27 +693,53 @@ export default function Home() {
     const tempResearchId = `temp-${newResearchStarted}`;
 
     if (chatBoxSettings.report_type === 'multi_agents' && langgraphHostUrl) {
-      let { streamResponse, host, thread_id } = await startLanggraphResearch(newQuestion, chatBoxSettings.report_source, langgraphHostUrl);
-      const langsmithGuiLink = `https://smith.langchain.com/studio/thread/${thread_id}?baseUrl=${host}`;
-      setOrderedData((prevOrder) => [...prevOrder, { type: 'langgraphButton', link: langsmithGuiLink }]);
+      const { streamResponse, host, thread_id, assistant_id } = await startLanggraphResearch(
+        researchQuestion,
+        chatBoxSettings.report_source,
+        langgraphHostUrl
+      );
 
-      let previousChunk = null;
-      for await (const chunk of streamResponse) {
-        if (chunk.data.report != null && chunk.data.report != "Full report content here") {
-          setOrderedData((prevOrder) => [...prevOrder, { ...chunk.data, output: chunk.data.report, type: 'report' }]);
-          setLoading(false);
-        
-          // Save research and navigate to its unique URL once it's complete
-          setAnswer(chunk.data.report);
-        } else if (previousChunk) {
-          const differences = findDifferences(previousChunk, chunk);
-          setOrderedData((prevOrder) => [...prevOrder, { type: 'differences', content: 'differences', output: JSON.stringify(differences) }]);
-        }
-        previousChunk = chunk;
-      }
+      await handleLangGraphStream(
+        streamResponse,
+        {
+          threadId: thread_id,
+          assistantId: assistant_id,
+          host,
+        },
+        true
+      );
     } else {
-      initializeWebSocket(newQuestion, chatBoxSettings);
+      initializeWebSocket(researchQuestion, chatBoxSettings);
     }
+  };
+
+  const handleDisplayResult = async (newQuestion: string) => {
+    await requestClarification(newQuestion);
+  };
+
+  const handleSkipClarification = async () => {
+    if (!pendingResearchQuestion) {
+      return;
+    }
+
+    await startConfirmedResearch(pendingResearchQuestion, pendingResearchQuestion);
+  };
+
+  const handleSubmitClarification = async (result: {
+    selections: Record<string, string[]>;
+    note: string;
+  }) => {
+    if (!pendingResearchQuestion) {
+      return;
+    }
+
+    const finalQuestion = composeClarifiedQuery(
+      pendingResearchQuestion,
+      clarificationPayload,
+      result
+    );
+
+    await startConfirmedResearch(finalQuestion, pendingResearchQuestion);
   };
 
   // Mobile-specific implementation for research
@@ -675,10 +965,15 @@ export default function Home() {
     clearStartupLogTimers();
     setOrderedData([]);
     setAllLogs([]);
+    setClarificationPayload(null);
+    setPendingResearchQuestion("");
+    setIsClarificationLoading(false);
 
     // Reset feedback states
     setShowHumanFeedback(false);
-    setQuestionForHuman(false);
+    setQuestionForHuman(null);
+    setPendingLangGraphRun(null);
+    setIsSubmittingHumanFeedback(false);
     
     // Clean up connections
     if (socket) {
@@ -958,6 +1253,14 @@ export default function Home() {
               handleDisplayResult={handleDisplayResult}
               handleChat={handleChat}
               handleClickSuggestion={handleClickSuggestion}
+              clarificationPayload={clarificationPayload}
+              onSkipClarification={handleSkipClarification}
+              onSubmitClarification={handleSubmitClarification}
+              isClarificationLoading={isClarificationLoading}
+              showHumanFeedback={showHumanFeedback}
+              questionForHuman={questionForHuman}
+              handleFeedbackSubmit={handleFeedbackSubmit}
+              isSubmittingHumanFeedback={isSubmittingHumanFeedback}
               currentResearchId={currentResearchId || undefined}
               onShareClick={currentResearchId ? handleCopyUrl : undefined}
               reset={reset}

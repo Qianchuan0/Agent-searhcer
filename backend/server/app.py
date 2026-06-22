@@ -28,6 +28,7 @@ from server.server_utils import (
     execute_multi_agents, handle_websocket_communication
 )
 from server.agent_discovery import build_agent_discovery_document
+from server.clarification import generate_clarification_payload
 
 from server.websocket_manager import run_agent
 from utils import write_md_to_word, write_md_to_pdf
@@ -46,6 +47,12 @@ logger.propagate = True
 
 # Silence uvicorn reload logs
 logging.getLogger("uvicorn.supervisors.ChangeReload").setLevel(logging.WARNING)
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 # Models
 
@@ -66,6 +73,10 @@ class ChatRequest(BaseModel):
     
     report: str
     messages: List[Dict[str, Any]]
+
+
+class ClarificationRequest(BaseModel):
+    query: str
 
 
 @asynccontextmanager
@@ -418,6 +429,12 @@ async def chat(chat_request: ChatRequest):
     except Exception as e:
         logger.error(f"Error processing chat request: {str(e)}", exc_info=True)
         return {"error": str(e)}
+
+
+@app.post("/api/clarify")
+async def clarify_research_direction(request: ClarificationRequest):
+    payload = await generate_clarification_payload(request.query)
+    return payload
 
 @app.post("/api/reports/{research_id}/chat")
 async def research_report_chat(research_id: str, request: Request):

@@ -29,6 +29,37 @@ export interface ChatData extends BaseData {
   metadata?: any; // For storing search results and other contextual information
 }
 
+export interface HumanReviewRequest {
+  type: 'plan_review';
+  message: string;
+  title?: string;
+  sections: string[];
+  revision_count?: number;
+}
+
+export interface ClarificationOption {
+  id: string;
+  label: string;
+}
+
+export interface ClarificationSection {
+  id: string;
+  title: string;
+  description?: string;
+  multiple?: boolean;
+  required?: boolean;
+  options: ClarificationOption[];
+}
+
+export interface ClarificationPayload {
+  query: string;
+  prompt: string;
+  can_skip?: boolean;
+  sections: ClarificationSection[];
+  free_text_label?: string;
+  free_text_placeholder?: string;
+}
+
 export interface StreamData extends BaseData {
   type: 'logs' | 'report' | 'report_complete' | 'path';
   content: string;
@@ -79,6 +110,12 @@ export interface ChatMessage {
   content: string;
   timestamp?: number;
   metadata?: any; // For storing search results and other contextual information
+}
+
+export interface LangGraphRunContext {
+  threadId: string;
+  assistantId: string;
+  host: string;
 }
 
 export interface ResearchHistoryItem {

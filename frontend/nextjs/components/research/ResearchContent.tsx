@@ -3,7 +3,14 @@ import { ResearchResults } from "@/components/ResearchResults";
 import InputArea from "@/components/ResearchBlocks/elements/InputArea";
 import ChatInput from "@/components/ResearchBlocks/elements/ChatInput";
 import LoadingDots from "@/components/LoadingDots";
-import { ChatBoxSettings, Data } from "@/types/data";
+import HumanFeedback from "@/components/HumanFeedback";
+import ResearchClarification from "@/components/research/ResearchClarification";
+import {
+  ChatBoxSettings,
+  ClarificationPayload,
+  Data,
+  HumanReviewRequest,
+} from "@/types/data";
 import { getLatestStatusMessage } from "@/utils/researchStatus";
 
 interface ResearchContentProps {
@@ -22,6 +29,17 @@ interface ResearchContentProps {
   handleDisplayResult: (question: string) => void;
   handleChat: (message: string) => void;
   handleClickSuggestion: (value: string) => void;
+  clarificationPayload?: ClarificationPayload | null;
+  onSkipClarification?: () => void;
+  onSubmitClarification?: (result: {
+    selections: Record<string, string[]>;
+    note: string;
+  }) => void;
+  isClarificationLoading?: boolean;
+  showHumanFeedback?: boolean;
+  questionForHuman?: string | HumanReviewRequest | null;
+  handleFeedbackSubmit?: (feedback: string | null) => void;
+  isSubmittingHumanFeedback?: boolean;
   currentResearchId?: string;
   onShareClick?: () => void;
   reset?: () => void;
@@ -45,6 +63,14 @@ export default function ResearchContent({
   handleDisplayResult,
   handleChat,
   handleClickSuggestion,
+  clarificationPayload = null,
+  onSkipClarification,
+  onSubmitClarification,
+  isClarificationLoading = false,
+  showHumanFeedback = false,
+  questionForHuman = null,
+  handleFeedbackSubmit,
+  isSubmittingHumanFeedback = false,
   currentResearchId,
   onShareClick,
   reset,
@@ -93,7 +119,20 @@ export default function ResearchContent({
       </div>
       
       <div id="input-area" className="container px-4 lg:px-0 mb-4">
-        {loading || isProcessingChat ? (
+        {clarificationPayload && onSkipClarification && onSubmitClarification ? (
+          <ResearchClarification
+            payload={clarificationPayload}
+            onSkip={onSkipClarification}
+            onSubmit={onSubmitClarification}
+            isSubmitting={isClarificationLoading}
+          />
+        ) : showHumanFeedback && handleFeedbackSubmit ? (
+          <HumanFeedback
+            questionForHuman={questionForHuman}
+            onFeedbackSubmit={handleFeedbackSubmit}
+            isSubmitting={isSubmittingHumanFeedback}
+          />
+        ) : loading || isProcessingChat ? (
           <div className="mt-4 rounded-lg border border-gray-700/50 bg-gray-900/80 px-4 py-4 shadow-md">
             <div className="flex items-center justify-between gap-4">
               <div>

@@ -23,4 +23,7 @@ def sanitize_filename(filename: str) -> str:
     >>> sanitize_filename('valid_filename.txt')
     'valid_filename.txt'
     """
-    return re.sub(r'[<>:"/\\|?*]', '_', filename)
+    sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', str(filename))
+    sanitized = re.sub(r'\s+', '_', sanitized)
+    sanitized = sanitized.strip(" ._")
+    return sanitized or "untitled"

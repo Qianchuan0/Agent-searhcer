@@ -1,8 +1,9 @@
 import os
 import time
 import datetime
+import hashlib
 from langgraph.graph import StateGraph, END
-# from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.memory import InMemorySaver
 from .utils.views import print_agent_output
 from ..memory.research import ResearchState
 from .utils.utils import sanitize_filename
@@ -18,6 +19,9 @@ from . import \
     PublisherAgent, \
     ResearchAgent, \
     HumanAgent
+
+
+CHECKPOINTER = InMemorySaver()
 
 
 class ChiefEditorAgent:
@@ -37,9 +41,11 @@ class ChiefEditorAgent:
         return int(time.time())
 
     def _create_output_directory(self):
+        query = self.task.get("query", "")
+        query_hash = hashlib.md5(query.encode("utf-8", errors="ignore")).hexdigest()[:10]
         output_dir = "./outputs/" + \
             sanitize_filename(
-                f"run_{self.task_id}_{self.task.get('query')[0:40]}")
+                f"run_{self.task_id}_{query_hash}")
 
         os.makedirs(output_dir, exist_ok=True)
         return output_dir
@@ -94,6 +100,10 @@ class ChiefEditorAgent:
         agents = self._initialize_agents()
         return self._create_workflow(agents)
 
+    def compile_research_team(self):
+        research_team = self.init_research_team()
+        return research_team.compile(checkpointer=CHECKPOINTER)
+
     async def _log_research_start(self):
         message = f"Starting the research process for query '{self.task.get('query')}'..."
         if self.websocket and self.stream_output:
@@ -111,14 +121,13 @@ class ChiefEditorAgent:
         Returns:
             The result of the research task.
         """
-        research_team = self.init_research_team()
-        chain = research_team.compile()
+        chain = self.compile_research_team()
 
         await self._log_research_start()
 
         config = {
             "configurable": {
-                "thread_id": task_id,
+                "thread_id": task_id or str(self.task_id),
                 "thread_ts": datetime.datetime.utcnow()
             }
         }

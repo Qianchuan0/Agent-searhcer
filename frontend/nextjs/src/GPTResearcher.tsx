@@ -4,7 +4,7 @@ import React from 'react';
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useWebSocket } from '../hooks/useWebSocket';
 
-import { Data, ChatBoxSettings, QuestionData } from '../types/data';
+import { Data, ChatBoxSettings, QuestionData, HumanReviewRequest } from '../types/data';
 import { preprocessOrderedData } from '../utils/dataProcessing';
 import { ResearchResults } from '../components/ResearchResults';
 
@@ -51,7 +51,7 @@ export const GPTResearcher = ({
   const [question, setQuestion] = useState("");
   const [orderedData, setOrderedData] = useState<Data[]>([]);
   const [showHumanFeedback, setShowHumanFeedback] = useState(false);
-  const [questionForHuman, setQuestionForHuman] = useState<true | false>(false);
+  const [questionForHuman, setQuestionForHuman] = useState<string | HumanReviewRequest | null>(null);
   const [allLogs, setAllLogs] = useState<any[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [isStopped, setIsStopped] = useState(false);
@@ -213,7 +213,7 @@ export const GPTResearcher = ({
     setAllLogs([]);
     
     setShowHumanFeedback(false);
-    setQuestionForHuman(false);
+    setQuestionForHuman(null);
     
     if (socket) {
       socket.close();
@@ -322,7 +322,6 @@ export const GPTResearcher = ({
               {showHumanFeedback && (
                 <HumanFeedback
                   questionForHuman={questionForHuman}
-                  websocket={socket}
                   onFeedbackSubmit={handleFeedbackSubmit}
                 />
               )}

@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Data, ChatBoxSettings } from '../types/data';
+import { Data, ChatBoxSettings, HumanReviewRequest } from '../types/data';
 import { getHost } from '../helpers/getHost';
 import { LOCAL_RESEARCH_STATUS_MESSAGES, createStatusEvent } from '@/utils/researchStatus';
 
@@ -8,7 +8,7 @@ export const useWebSocket = (
   setAnswer: React.Dispatch<React.SetStateAction<string>>,
   setLoading: React.Dispatch<React.SetStateAction<boolean>>,
   setShowHumanFeedback: React.Dispatch<React.SetStateAction<boolean>>,
-  setQuestionForHuman: React.Dispatch<React.SetStateAction<boolean | true>>
+  setQuestionForHuman: React.Dispatch<React.SetStateAction<string | HumanReviewRequest | null>>
 ) => {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const heartbeatInterval = useRef<number>();

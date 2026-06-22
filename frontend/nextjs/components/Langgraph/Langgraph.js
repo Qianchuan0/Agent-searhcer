@@ -1,48 +1,67 @@
 import { Client } from "@langchain/langgraph-sdk";
 import { task } from '../../config/task';
 
-export async function startLanggraphResearch(newQuestion, report_source, langgraphHostUrl) {
-    // Update the task query with the new question
-    task.task.query = newQuestion;
-    task.task.source = report_source;
-    const host = langgraphHostUrl;
-    
-    // Add your Langgraph Cloud Authentication token here
-    const authToken = '';
+function createLanggraphClient(langgraphHostUrl) {
+  const authToken = '';
 
-    const client = new Client({
-        apiUrl: host,
-        defaultHeaders: {
-            'Content-Type': 'application/json',
-            'X-Api-Key': authToken
-        }
-    });
-  
-    // List all assistants
-    const assistants = await client.assistants.search({
-      metadata: null,
-      offset: 0,
-      limit: 10,
-    });
-  
-    console.log('assistants: ', assistants);
-  
-    // We auto-create an assistant for each graph you register in config.
-    const agent = assistants[0];
-  
-    // Start a new thread
-    const thread = await client.threads.create();
-  
-    // Start a streaming run
-    const input = task;
-  
-    const streamResponse = client.runs.stream(
+  return new Client({
+    apiUrl: langgraphHostUrl,
+    defaultHeaders: {
+      'Content-Type': 'application/json',
+      'X-Api-Key': authToken,
+    },
+  });
+}
+
+async function getDefaultAssistant(client) {
+  const assistants = await client.assistants.search({
+    metadata: null,
+    offset: 0,
+    limit: 10,
+  });
+
+  return assistants[0];
+}
+
+export async function startLanggraphResearch(newQuestion, report_source, langgraphHostUrl) {
+  task.task.query = newQuestion;
+  task.task.source = report_source;
+
+  const client = createLanggraphClient(langgraphHostUrl);
+  const agent = await getDefaultAssistant(client);
+  const thread = await client.threads.create();
+
+  return {
+    streamResponse: client.runs.stream(
       thread["thread_id"],
       agent["assistant_id"],
       {
-        input,
+        input: task,
       },
-    );
+    ),
+    host: langgraphHostUrl,
+    thread_id: thread["thread_id"],
+    assistant_id: agent["assistant_id"],
+    client,
+  };
+}
 
-    return {streamResponse, host, thread_id: thread["thread_id"]};
+export function resumeLanggraphResearch({ threadId, assistantId, feedback, langgraphHostUrl }) {
+  const client = createLanggraphClient(langgraphHostUrl);
+
+  return {
+    streamResponse: client.runs.stream(
+      threadId,
+      assistantId,
+      {
+        input: feedback,
+      },
+    ),
+    client,
+  };
+}
+
+export function getLanggraphThreadState({ threadId, langgraphHostUrl }) {
+  const client = createLanggraphClient(langgraphHostUrl);
+  return client.threads.getState(threadId);
 }

@@ -5,6 +5,8 @@ export const RESEARCH_STATUS_KEYS = [
   'planning_research',
   'researching',
   'agent_generated',
+  'awaiting_human_feedback',
+  'resuming_after_feedback',
   'error',
 ] as const;
 
@@ -19,6 +21,8 @@ export const LOCAL_RESEARCH_STATUS_MESSAGES = {
   backendAccepted: '后端已接收任务，正在初始化研究流程...',
   backendPreparing: '正在准备研究角色、检索器和上下文环境...',
   backendRunning: '研究流程已启动，正在搜集可用来源...',
+  awaitingHumanFeedback: '研究大纲已生成，请确认后继续执行。',
+  resumingAfterFeedback: '已收到你的反馈，正在调整大纲并继续研究...',
   connectionFailed: '研究服务连接失败，请稍后重试。',
   defaultLoading: '正在准备研究任务...',
 } as const;

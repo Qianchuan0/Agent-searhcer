@@ -13,6 +13,10 @@ import ResearchContent from "@/components/research/ResearchContent";
 import NotFoundContent from "@/components/research/NotFoundContent";
 import LoadingDots from "@/components/LoadingDots";
 import { RESEARCH_STATUS_KEYS } from "@/utils/researchStatus";
+import {
+  hasDismissedMemorySuggestions,
+  markMemorySuggestionsDismissed,
+} from "@/utils/memorySuggestionState";
 
 // Import mobile components
 import MobileResearchContent from "@/components/mobile/MobileResearchContent";
@@ -319,7 +323,10 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
       if (!currentResearchId || !answer || loading || !memorySettings?.enabled) {
         return;
       }
-      if (dismissedSuggestionReportsRef.current.has(currentResearchId)) {
+      if (
+        dismissedSuggestionReportsRef.current.has(currentResearchId) ||
+        hasDismissedMemorySuggestions(currentResearchId)
+      ) {
         return;
       }
       if (suggestionRequestRef.current === currentResearchId) {
@@ -328,8 +335,11 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
 
       suggestionRequestRef.current = currentResearchId;
       try {
-        const suggestions = await getSuggestions(currentResearchId);
-        setMemorySuggestions(suggestions);
+        const result = await getSuggestions(currentResearchId);
+        if (result.metadata?.blocked && result.metadata.reason) {
+          toast(result.metadata.reason, { icon: "🔒", id: `memory-blocked-${id}` });
+        }
+        setMemorySuggestions(result.suggestions || []);
       } catch (error) {
         console.error("Error loading memory suggestions:", error);
       }
@@ -367,6 +377,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
   const handleDismissAllMemorySuggestions = () => {
     if (currentResearchId) {
       dismissedSuggestionReportsRef.current.add(currentResearchId);
+      markMemorySuggestionsDismissed(currentResearchId);
     }
     setMemorySuggestions([]);
   };

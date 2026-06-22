@@ -8,11 +8,24 @@ import {
   MemorySearchResponse,
   MemorySettings,
   MemorySuggestion,
+  MemorySuggestionsResponse,
   ReportMemoryResponse,
   ResearchClassificationResponse,
 } from "../types/data";
 
 const MEMORY_SETTINGS_STORAGE_KEY = "gptr-memory-settings";
+
+async function readErrorMessage(response: Response, fallback: string) {
+  try {
+    const data = await response.json();
+    if (typeof data?.detail === "string" && data.detail.trim()) {
+      return data.detail;
+    }
+  } catch {
+    // Ignore parse failures and return fallback.
+  }
+  return fallback;
+}
 
 interface ResearchMemoryState {
   settings: MemorySettings | null;
@@ -128,7 +141,7 @@ export const useResearchMemory = () => {
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      throw new Error(`Failed to create memory item: ${response.status}`);
+      throw new Error(await readErrorMessage(response, `Failed to create memory item: ${response.status}`));
     }
     const data = (await response.json()) as { item: MemoryItem };
     setItems([data.item, ...items]);
@@ -142,7 +155,7 @@ export const useResearchMemory = () => {
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      throw new Error(`Failed to update memory item: ${response.status}`);
+      throw new Error(await readErrorMessage(response, `Failed to update memory item: ${response.status}`));
     }
     const data = (await response.json()) as { item: MemoryItem };
     setItems(items.map((item) => (item.id === memoryId ? data.item : item)));
@@ -191,8 +204,7 @@ export const useResearchMemory = () => {
     if (!response.ok) {
       throw new Error(`Failed to generate memory suggestions: ${response.status}`);
     }
-    const data = (await response.json()) as { suggestions: MemorySuggestion[] };
-    return data.suggestions || [];
+    return (await response.json()) as MemorySuggestionsResponse;
   };
 
   const getReportMemory = async (reportId: string) => {

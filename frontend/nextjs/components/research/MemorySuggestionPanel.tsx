@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MemorySuggestion } from "@/types/data";
 
 interface MemorySuggestionPanelProps {
@@ -32,6 +33,40 @@ export default function MemorySuggestionPanel({
   onDismissAll,
   onClose,
 }: MemorySuggestionPanelProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, { title: string; content: string }>>({});
+
+  useEffect(() => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (const suggestion of suggestions) {
+        if (!next[suggestion.id]) {
+          next[suggestion.id] = {
+            title: suggestion.title,
+            content: suggestion.content,
+          };
+        }
+      }
+      for (const suggestionId of Object.keys(next)) {
+        if (!suggestions.some((item) => item.id === suggestionId)) {
+          delete next[suggestionId];
+        }
+      }
+      return next;
+    });
+  }, [suggestions]);
+
+  const updateDraft = (suggestionId: string, field: "title" | "content", value: string) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [suggestionId]: {
+        title: prev[suggestionId]?.title ?? "",
+        content: prev[suggestionId]?.content ?? "",
+        [field]: value,
+      },
+    }));
+  };
+
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
       <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] px-5 py-5">
@@ -41,7 +76,7 @@ export default function MemorySuggestionPanel({
           </p>
           <h3 className="mt-1 text-lg font-semibold text-ink">建议保存到长期记忆</h3>
           <p className="mt-2 text-sm leading-6 text-ink-secondary">
-            这些内容来自刚完成的研究。只有在你确认后，系统才会写入长期记忆。
+            这些内容来自刚完成的研究。你可以先编辑，再决定是否写入长期记忆。
           </p>
         </div>
         <button
@@ -55,7 +90,7 @@ export default function MemorySuggestionPanel({
 
       <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-3">
         <p className="text-xs text-ink-secondary">
-          共 {suggestions.length} 条建议，可逐条保存或忽略。
+          共 {suggestions.length} 条建议，可逐条编辑、保存或忽略。
         </p>
         <button type="button" onClick={onDismissAll} className="ghost-btn px-3 py-1.5 text-xs">
           全部忽略
@@ -65,6 +100,12 @@ export default function MemorySuggestionPanel({
       <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
         {suggestions.map((suggestion) => {
           const isSaving = savingSuggestionId === suggestion.id;
+          const isEditing = editingId === suggestion.id;
+          const draft = drafts[suggestion.id] ?? {
+            title: suggestion.title,
+            content: suggestion.content,
+          };
+
           return (
             <article
               key={suggestion.id}
@@ -72,17 +113,32 @@ export default function MemorySuggestionPanel({
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium text-primary">
-                    {typeLabels[suggestion.type]}
-                  </p>
-                  <h4 className="mt-1 text-sm font-semibold text-ink">{suggestion.title}</h4>
+                  <p className="text-xs font-medium text-primary">{typeLabels[suggestion.type]}</p>
+                  {isEditing ? (
+                    <input
+                      value={draft.title}
+                      onChange={(event) => updateDraft(suggestion.id, "title", event.target.value)}
+                      className="mt-2 w-full rounded-xl border border-[var(--border)] bg-black/10 px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-primary"
+                    />
+                  ) : (
+                    <h4 className="mt-1 text-sm font-semibold text-ink">{draft.title}</h4>
+                  )}
                 </div>
                 <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[11px] text-ink-secondary">
-                  可信度 {confidenceLabels[suggestion.confidence]}
+                  可信度：{confidenceLabels[suggestion.confidence]}
                 </span>
               </div>
 
-              <p className="mt-3 text-sm leading-6 text-ink">{suggestion.content}</p>
+              {isEditing ? (
+                <textarea
+                  value={draft.content}
+                  onChange={(event) => updateDraft(suggestion.id, "content", event.target.value)}
+                  className="mt-3 min-h-[120px] w-full rounded-2xl border border-[var(--border)] bg-black/10 px-3 py-3 text-sm leading-6 text-ink outline-none focus:border-primary"
+                />
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-ink">{draft.content}</p>
+              )}
+
               <p className="mt-3 text-xs leading-5 text-ink-secondary">
                 保存理由：{suggestion.reason}
               </p>
@@ -93,14 +149,27 @@ export default function MemorySuggestionPanel({
                 </div>
               )}
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => onSave(suggestion)}
+                  onClick={() =>
+                    onSave({
+                      ...suggestion,
+                      title: draft.title.trim() || suggestion.title,
+                      content: draft.content.trim() || suggestion.content,
+                    })
+                  }
                   disabled={isSaving}
                   className="neon-btn px-3 py-1.5 text-xs disabled:opacity-60"
                 >
                   {isSaving ? "保存中..." : "保存到记忆"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingId(isEditing ? null : suggestion.id)}
+                  className="ghost-btn px-3 py-1.5 text-xs"
+                >
+                  {isEditing ? "完成编辑" : "编辑后保存"}
                 </button>
                 <button
                   type="button"

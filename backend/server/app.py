@@ -44,6 +44,7 @@ from server.memory_schemas import (
     ResearchClassificationRequest,
 )
 from server.memory_service import MemoryService
+from server.memory_mcp_adapter import MemoryMCPAdapter
 from server.memory_store import MemoryStore
 from server.report_store import ReportStore
 
@@ -156,6 +157,7 @@ manager = WebSocketManager()
 report_store = ReportStore(Path(os.getenv('REPORT_STORE_PATH', os.path.join('data', 'reports.json'))))
 memory_store = MemoryStore(Path(os.getenv("MEMORY_STORE_PATH", os.path.join("data", "memory", "memory.json"))))
 memory_service = MemoryService(memory_store, report_store)
+memory_mcp_adapter = MemoryMCPAdapter(memory_service)
 
 # Constants
 DOC_PATH = os.getenv("DOC_PATH", "./my-docs")
@@ -373,6 +375,11 @@ async def get_report_memory(research_id: str):
     return await memory_service.get_report_memory(research_id)
 
 
+@app.get("/api/memory/mcp-capabilities")
+async def get_memory_mcp_capabilities():
+    return memory_mcp_adapter.capabilities()
+
+
 async def write_report(research_request: ResearchRequest, research_id: str = None):
     report_information = await run_agent(
         task=research_request.task,
@@ -514,39 +521,3 @@ async def clarify_research_direction(request: ClarificationRequest):
     payload = await generate_clarification_payload(request.query)
     return payload
 
-@app.post("/api/reports/{research_id}/chat")
-async def research_report_chat(research_id: str, request: Request):
-    """Handle chat requests for a specific research report.
-    Directly processes the raw request data to avoid validation errors.
-    """
-    try:
-        # Get raw JSON data from request
-        data = await request.json()
-        
-        # Create chat agent with the report
-        chat_agent = ChatAgentWithMemory(
-            report=data.get("report", ""),
-            config_path="default",
-            headers=None
-        )
-
-        # Process the chat and get response with metadata
-        response_content, tool_calls_metadata = await chat_agent.chat(data.get("messages", []), None)
-        
-        if tool_calls_metadata:
-            logger.info(f"Tool calls used: {json.dumps(tool_calls_metadata)}")
-
-        # Format response as a ChatMessage object
-        response_message = {
-            "role": "assistant",
-            "content": response_content,
-            "timestamp": int(time.time() * 1000),
-            "metadata": {
-                "tool_calls": tool_calls_metadata
-            } if tool_calls_metadata else None
-        }
-
-        return {"response": response_message}
-    except Exception as e:
-        logger.error(f"Error in research report chat: {str(e)}", exc_info=True)
-        return {"error": str(e)}

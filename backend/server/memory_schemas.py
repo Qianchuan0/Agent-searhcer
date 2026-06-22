@@ -121,6 +121,7 @@ class MemorySuggestionRequest(BaseModel):
 
 class MemorySuggestionsResponse(BaseModel):
     suggestions: List[MemorySuggestion]
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ResearchClassificationRequest(BaseModel):

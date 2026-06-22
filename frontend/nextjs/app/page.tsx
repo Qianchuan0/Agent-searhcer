@@ -39,6 +39,10 @@ import {
   createQuestionEvent,
   createStatusEvent,
 } from "@/utils/researchStatus";
+import {
+  hasDismissedMemorySuggestions,
+  markMemorySuggestionsDismissed,
+} from "@/utils/memorySuggestionState";
 
 // Import the mobile components
 import MobileHomeScreen from "@/components/mobile/MobileHomeScreen";
@@ -84,6 +88,18 @@ export default function Home() {
   } | null>(null);
   const suggestionRequestRef = useRef<string | null>(null);
   const dismissedSuggestionReportsRef = useRef<Set<string>>(new Set());
+  const selectedBridgeMemoriesRef = useRef<
+    Array<{
+      id: string;
+      title: string;
+      summary: string;
+      reportId: string;
+      score: number;
+      confidence: string;
+      createdAt: string;
+      staleness: string | null;
+    }>
+  >([]);
 
   // Use our custom scroll handler
   const { showScrollButton, scrollToBottom } = useScrollHandler(mainContentRef);
@@ -179,6 +195,7 @@ export default function Home() {
 
       clearStartupLogTimers();
       setLoading(false);
+      setClarificationPayload(null);
       setPendingMemoryBridge(classification);
       setPendingMemoryBridgeQuestion({ researchQuestion, displayQuestion });
       setOrderedData((prevOrder) => [
@@ -725,6 +742,20 @@ export default function Home() {
     setPendingMemoryBridge(null);
     setPendingMemoryBridgeQuestion(null);
     queueInitialResearchLogs(baseQuestion);
+    if (selectedBridgeMemoriesRef.current.length > 0) {
+      setOrderedData((prevOrder) => [
+        ...prevOrder,
+        createStatusEvent(
+          'planning_research',
+          `已承接 ${selectedBridgeMemoriesRef.current.length} 条历史结论，接下来会在新研究中明确区分历史结论和本次新增发现。`,
+          {
+            source: 'client',
+            stage: 'memory_bridge_confirmed',
+            selected_memories: selectedBridgeMemoriesRef.current,
+          }
+        ),
+      ]);
+    }
 
     // For mobile, use a simplified approach without websockets
     if (isMobile) {
@@ -883,14 +914,25 @@ export default function Home() {
     await startConfirmedResearch(finalQuestion, pendingResearchQuestion);
   };
 
-  const handleUseMemoryBridge = async () => {
+  const handleUseMemoryBridge = async (selectedMemories: MemorySearchResult[]) => {
     if (!pendingMemoryBridgeQuestion || !pendingMemoryBridge) {
       return;
     }
 
+    selectedBridgeMemoriesRef.current = selectedMemories.map((entry) => ({
+      id: entry.item.id,
+      title: entry.item.title,
+      summary: entry.item.summary,
+      reportId: entry.item.source.report_id || "unknown",
+      score: entry.score,
+      confidence: entry.item.confidence,
+      createdAt: entry.item.created_at,
+      staleness: entry.findings[0]?.staleness || null,
+    }));
+
     const groundedQuestion = buildMemoryGroundedQuestion(
       pendingMemoryBridgeQuestion.researchQuestion,
-      pendingMemoryBridge.related_memories
+      selectedMemories
     );
 
     await runConfirmedResearch(groundedQuestion, pendingMemoryBridgeQuestion.displayQuestion);
@@ -900,6 +942,8 @@ export default function Home() {
     if (!pendingMemoryBridgeQuestion) {
       return;
     }
+
+    selectedBridgeMemoriesRef.current = [];
 
     await runConfirmedResearch(
       pendingMemoryBridgeQuestion.researchQuestion,
@@ -936,6 +980,7 @@ export default function Home() {
   const handleDismissAllMemorySuggestions = () => {
     if (currentResearchId) {
       dismissedSuggestionReportsRef.current.add(currentResearchId);
+      markMemorySuggestionsDismissed(currentResearchId);
     }
     setMemorySuggestions([]);
   };
@@ -1170,6 +1215,7 @@ export default function Home() {
     setPendingMemoryBridgeQuestion(null);
     setMemorySuggestions([]);
     setSavingMemorySuggestionId(null);
+    selectedBridgeMemoriesRef.current = [];
 
     // Reset feedback states
     setShowHumanFeedback(false);
@@ -1299,7 +1345,10 @@ export default function Home() {
       if (!currentResearchId || !answer || loading || !memorySettings?.enabled) {
         return;
       }
-      if (dismissedSuggestionReportsRef.current.has(currentResearchId)) {
+      if (
+        dismissedSuggestionReportsRef.current.has(currentResearchId) ||
+        hasDismissedMemorySuggestions(currentResearchId)
+      ) {
         return;
       }
       if (suggestionRequestRef.current === currentResearchId) {
@@ -1308,8 +1357,11 @@ export default function Home() {
 
       suggestionRequestRef.current = currentResearchId;
       try {
-        const suggestions = await getSuggestions(currentResearchId);
-        setMemorySuggestions(suggestions);
+        const result = await getSuggestions(currentResearchId);
+        if (result.metadata?.blocked && result.metadata.reason) {
+          toast(result.metadata.reason, { icon: "🔒" });
+        }
+        setMemorySuggestions(result.suggestions || []);
       } catch (error) {
         console.error("Error loading memory suggestions:", error);
       }

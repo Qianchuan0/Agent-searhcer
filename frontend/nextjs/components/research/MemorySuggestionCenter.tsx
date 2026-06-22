@@ -35,7 +35,9 @@ function readSuppressedScopes(): string[] {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
   } catch {
     return [];
   }
@@ -204,23 +206,11 @@ export default function MemorySuggestionCenter({
     setCompactVisible(suggestions.length > 0);
   };
 
-  const dismissTeaser = () => {
-    suppressToCompact();
-  };
-
-  const closeDrawer = () => {
-    suppressToCompact();
-  };
-
-  const hideDrawerWithoutBadge = () => {
+  const handleDismissAll = () => {
+    onDismissAll();
     setDrawerOpen(false);
     setTeaserVisible(false);
     setCompactVisible(false);
-  };
-
-  const handleDismissAll = () => {
-    onDismissAll();
-    hideDrawerWithoutBadge();
   };
 
   if (!mounted || !suggestions.length || isMobile) {
@@ -250,7 +240,7 @@ export default function MemorySuggestionCenter({
                 <button type="button" onClick={openDrawer} className="neon-btn px-3 py-1.5 text-xs">
                   现在查看
                 </button>
-                <button type="button" onClick={dismissTeaser} className="ghost-btn px-3 py-1.5 text-xs">
+                <button type="button" onClick={suppressToCompact} className="ghost-btn px-3 py-1.5 text-xs">
                   稍后再看
                 </button>
               </div>
@@ -283,7 +273,7 @@ export default function MemorySuggestionCenter({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] bg-black/45 backdrop-blur-[2px]"
-              onClick={closeDrawer}
+              onClick={suppressToCompact}
             />
             <motion.aside
               initial={{ x: "100%" }}
@@ -299,7 +289,7 @@ export default function MemorySuggestionCenter({
                 onSave={onSave}
                 onDismiss={onDismiss}
                 onDismissAll={handleDismissAll}
-                onClose={closeDrawer}
+                onClose={suppressToCompact}
               />
             </motion.aside>
           </>

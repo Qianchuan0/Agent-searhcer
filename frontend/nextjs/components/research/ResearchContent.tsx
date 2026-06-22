@@ -12,6 +12,7 @@ import {
   ClarificationPayload,
   Data,
   HumanReviewRequest,
+  MemorySearchResult,
   MemorySuggestion,
   ResearchClassificationResponse,
 } from "@/types/data";
@@ -55,7 +56,7 @@ interface ResearchContentProps {
   onDismissAllMemorySuggestions?: () => void;
   savingMemorySuggestionId?: string | null;
   pendingMemoryBridge?: ResearchClassificationResponse | null;
-  onUseMemoryBridge?: () => void;
+  onUseMemoryBridge?: (selectedMemories: MemorySearchResult[]) => void;
   onSkipMemoryBridge?: () => void;
   isMobile?: boolean;
 }
@@ -140,18 +141,18 @@ export default function ResearchContent({
       </div>
 
       <div id="input-area" className="container mb-4 px-4 lg:px-0">
-        {clarificationPayload && onSkipClarification && onSubmitClarification ? (
+        {pendingMemoryBridge && onUseMemoryBridge && onSkipMemoryBridge ? (
+          <ResearchMemoryBridge
+            classification={pendingMemoryBridge}
+            onUseMemory={onUseMemoryBridge}
+            onSkipMemory={onSkipMemoryBridge}
+          />
+        ) : clarificationPayload && onSkipClarification && onSubmitClarification ? (
           <ResearchClarification
             payload={clarificationPayload}
             onSkip={onSkipClarification}
             onSubmit={onSubmitClarification}
             isSubmitting={isClarificationLoading}
-          />
-        ) : pendingMemoryBridge && onUseMemoryBridge && onSkipMemoryBridge ? (
-          <ResearchMemoryBridge
-            classification={pendingMemoryBridge}
-            onUseMemory={onUseMemoryBridge}
-            onSkipMemory={onSkipMemoryBridge}
           />
         ) : showHumanFeedback && handleFeedbackSubmit ? (
           <HumanFeedback

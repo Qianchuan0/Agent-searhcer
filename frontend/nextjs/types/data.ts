@@ -193,6 +193,15 @@ export interface MemorySettings {
   updated_at: string;
 }
 
+export interface MemorySuggestionsResponse {
+  suggestions: MemorySuggestion[];
+  metadata?: {
+    blocked?: boolean;
+    reason?: string;
+    count?: number;
+  };
+}
+
 export interface MemoryCreateRequest {
   type: MemoryType;
   title: string;

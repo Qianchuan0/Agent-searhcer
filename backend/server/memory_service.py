@@ -65,7 +65,7 @@ class MemoryService:
     async def create_item(self, request: MemoryCreateRequest) -> MemoryItem:
         settings = await self.get_settings()
         if not settings.enabled:
-            raise ValueError("Long-term memory is disabled.")
+            raise ValueError("长期记忆已关闭，当前不能写入记忆。")
         self._raise_if_sensitive(request.title, request.content)
         now = self._now()
         item = MemoryItem(
@@ -135,6 +135,8 @@ class MemoryService:
         question = (report.get("question") or "").strip()
         answer = (report.get("answer") or "").strip()
         if not question and not answer:
+            return None
+        if self._contains_sensitive(question, answer):
             return None
 
         payload = await self._store.read_all()
@@ -207,6 +209,14 @@ class MemoryService:
         answer = (report.get("answer") or "").strip()
         if not question and not answer:
             return MemorySuggestionsResponse(suggestions=[])
+        if self._contains_sensitive(question, answer):
+            return MemorySuggestionsResponse(
+                suggestions=[],
+                metadata={
+                    "blocked": True,
+                    "reason": "检测到疑似敏感信息，本次不会生成长期记忆建议。",
+                },
+            )
 
         suggestions: List[MemorySuggestion] = []
         summary = self._build_summary(question, answer)
@@ -214,7 +224,7 @@ class MemoryService:
         tags = self._extract_tags([question, answer])
 
         if summary:
-            suggestions.append(
+            suggestion = self._build_safe_suggestion(
                 MemorySuggestion(
                     id=f"suggestion_{uuid4().hex}",
                     type="research_knowledge",
@@ -227,9 +237,11 @@ class MemoryService:
                     confidence="medium",
                 )
             )
+            if suggestion is not None:
+                suggestions.append(suggestion)
 
         if question:
-            suggestions.append(
+            suggestion = self._build_safe_suggestion(
                 MemorySuggestion(
                     id=f"suggestion_{uuid4().hex}",
                     type="saved_context",
@@ -242,8 +254,13 @@ class MemoryService:
                     confidence="medium",
                 )
             )
+            if suggestion is not None:
+                suggestions.append(suggestion)
 
-        return MemorySuggestionsResponse(suggestions=suggestions[:4])
+        return MemorySuggestionsResponse(
+            suggestions=suggestions[:4],
+            metadata={"blocked": False, "count": min(len(suggestions), 4)},
+        )
 
     async def classify_research(
         self,
@@ -298,15 +315,73 @@ class MemoryService:
         )
 
     async def get_report_memory(self, report_id: str) -> ReportMemoryResponse:
+        report = await self._report_store.get_report(report_id)
+        if report is None:
+            return ReportMemoryResponse(report_id=report_id, memories=[], findings=[], metadata={"count": 0})
+
         memories = await self.list_items(status="active")
-        related = [item for item in memories if item.source.report_id == report_id]
-        findings = [finding for item in related if (finding := self._build_finding(item)) is not None]
+        adopted_memory_ids, adopted_findings = self._extract_adopted_memories(report)
+        adopted_id_set = set(adopted_memory_ids)
+        adopted_memories = [item for item in memories if item.id in adopted_id_set]
+
+        report_memories = [item for item in memories if item.source.report_id == report_id]
+        new_findings = [
+            finding for item in report_memories if (finding := self._build_finding(item)) is not None
+        ]
+
         return ReportMemoryResponse(
             report_id=report_id,
-            memories=related,
-            findings=findings,
-            metadata={"count": len(related)},
+            memories=adopted_memories,
+            findings=adopted_findings,
+            metadata={
+                "count": len(adopted_findings),
+                "adopted_memory_ids": adopted_memory_ids,
+                "new_findings": [finding.model_dump(mode="json") for finding in new_findings],
+            },
         )
+
+    def _extract_adopted_memories(self, report: dict) -> tuple[List[str], List[ResearchFinding]]:
+        ordered_data = report.get("orderedData") or []
+        if not isinstance(ordered_data, list):
+            return [], []
+
+        selected_memories = []
+        for entry in reversed(ordered_data):
+            if not isinstance(entry, dict):
+                continue
+            metadata = entry.get("metadata")
+            if not isinstance(metadata, dict):
+                continue
+            if metadata.get("stage") != "memory_bridge_confirmed":
+                continue
+            raw_selected = metadata.get("selected_memories")
+            if isinstance(raw_selected, list):
+                selected_memories = raw_selected
+                break
+
+        findings: List[ResearchFinding] = []
+        adopted_ids: List[str] = []
+        for raw in selected_memories:
+            if not isinstance(raw, dict):
+                continue
+            memory_id = str(raw.get("id") or "").strip()
+            if not memory_id:
+                continue
+            adopted_ids.append(memory_id)
+            findings.append(
+                ResearchFinding(
+                    id=f"finding_{uuid4().hex}",
+                    memory_id=memory_id,
+                    claim=str(raw.get("summary") or raw.get("title") or "").strip(),
+                    evidence_summary=str(raw.get("summary") or "").strip(),
+                    source_report_id=str(raw.get("reportId") or "unknown"),
+                    confidence=str(raw.get("confidence") or "medium"),
+                    generated_at=self._now(),
+                    staleness=str(raw.get("staleness") or "possibly_stale"),
+                )
+            )
+
+        return adopted_ids, findings
 
     def _find_report_index(self, items: Dict[str, dict], report_id: str) -> tuple[str | None, MemoryItem | None]:
         for memory_id, raw in items.items():
@@ -386,7 +461,12 @@ class MemoryService:
             return text
         return f"{text[: max(0, limit - 3)]}..."
 
-    def _raise_if_sensitive(self, *values: str) -> None:
+    def _build_safe_suggestion(self, suggestion: MemorySuggestion) -> MemorySuggestion | None:
+        if self._contains_sensitive(suggestion.title, suggestion.content, suggestion.source_excerpt):
+            return None
+        return suggestion
+
+    def _contains_sensitive(self, *values: str) -> bool:
         combined = "\n".join(values)
         sensitive_patterns = [
             r"api[_-]?key\s*[:=]",
@@ -396,8 +476,11 @@ class MemoryService:
             r"token\s*[:=]",
         ]
         lowered = combined.lower()
-        if any(re.search(pattern, lowered, re.IGNORECASE) for pattern in sensitive_patterns):
-            raise ValueError("Sensitive information cannot be stored in long-term memory.")
+        return any(re.search(pattern, lowered, re.IGNORECASE) for pattern in sensitive_patterns)
+
+    def _raise_if_sensitive(self, *values: str) -> None:
+        if self._contains_sensitive(*values):
+            raise ValueError("检测到疑似敏感信息，长期记忆不会保存 API Key、Token、密码或私钥。")
 
     def _now(self) -> datetime:
         return datetime.now(UTC)

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Data, ChatBoxSettings, HumanReviewRequest } from '@/types/data';
 
-export type ActiveNav = 'home' | 'conversations' | 'workflow' | 'resources' | 'help';
+export type ActiveNav = 'home' | 'conversations' | 'workflow' | 'resources' | 'memory' | 'help';
 
 /** 默认研究设置（复刻 app/page.tsx 原 defaultSettings） */
 const DEFAULT_SETTINGS: ChatBoxSettings = {

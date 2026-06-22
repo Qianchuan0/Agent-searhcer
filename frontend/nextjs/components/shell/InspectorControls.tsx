@@ -1,7 +1,6 @@
 'use client';
 
 import { toast } from 'react-hot-toast';
-import MemoryManager from './MemoryManager';
 import { useResearchStore, DEFAULT_SETTINGS } from '@/stores/researchStore';
 import { ChatBoxSettings } from '@/types/data';
 import {
@@ -82,7 +81,7 @@ export default function InspectorControls() {
 
   const handleReset = () => {
     setChatBoxSettings(DEFAULT_SETTINGS);
-    toast.success('研究设置已恢复默认值');
+    toast.success('研究设置已恢复默认');
   };
 
   return (
@@ -131,8 +130,6 @@ export default function InspectorControls() {
           重置
         </button>
       </div>
-
-      <MemoryManager />
     </div>
   );
 }

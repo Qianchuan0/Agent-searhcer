@@ -22,6 +22,36 @@ const MAX_TEASER_DELAY_MS = 20000;
 const EDGE_GAP_PX = 24;
 const INSPECTOR_WIDTH_PX = 320;
 const DRAWER_GAP_PX = 16;
+const REMINDER_SUPPRESSION_STORAGE_KEY = "gptr-memory-reminder-suppressed";
+
+function readSuppressedScopes(): string[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(REMINDER_SUPPRESSION_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSuppressedScopes(scopes: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(REMINDER_SUPPRESSION_STORAGE_KEY, JSON.stringify(scopes));
+  } catch {
+    // Ignore storage failures and keep in-memory state as fallback.
+  }
+}
 
 export default function MemorySuggestionCenter({
   suggestions,
@@ -37,8 +67,16 @@ export default function MemorySuggestionCenter({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [teaserVisible, setTeaserVisible] = useState(false);
   const [compactVisible, setCompactVisible] = useState(false);
+  const [suppressedScopeKey, setSuppressedScopeKey] = useState<string | null>(null);
   const hasReadingInteractionRef = useRef(false);
   const minDelayPassedRef = useRef(false);
+
+  const reminderScopeKey = useMemo(() => {
+    if (!suggestions.length) {
+      return null;
+    }
+    return suggestions[0]?.source?.report_id ?? suggestions.map((item) => item.id).sort().join("|");
+  }, [suggestions]);
 
   const suggestionCount = suggestions.length;
   const teaserLabel = useMemo(() => {
@@ -50,11 +88,22 @@ export default function MemorySuggestionCenter({
 
   const floatingRight = inspectorOpen ? INSPECTOR_WIDTH_PX + EDGE_GAP_PX : EDGE_GAP_PX;
   const drawerRight = inspectorOpen ? INSPECTOR_WIDTH_PX + DRAWER_GAP_PX : DRAWER_GAP_PX;
+  const isSuppressed = !!reminderScopeKey && suppressedScopeKey === reminderScopeKey;
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (!reminderScopeKey) {
+      setSuppressedScopeKey(null);
+      return;
+    }
+
+    const suppressedScopes = readSuppressedScopes();
+    setSuppressedScopeKey(suppressedScopes.includes(reminderScopeKey) ? reminderScopeKey : null);
+  }, [reminderScopeKey]);
 
   useEffect(() => {
     if (!suggestions.length) {
@@ -66,14 +115,22 @@ export default function MemorySuggestionCenter({
       return;
     }
 
+    if (isSuppressed) {
+      setTeaserVisible(false);
+      if (!drawerOpen) {
+        setCompactVisible(true);
+      }
+      return;
+    }
+
     if (drawerOpen) {
       setTeaserVisible(false);
       setCompactVisible(false);
     }
-  }, [suggestions, drawerOpen]);
+  }, [suggestions, drawerOpen, isSuppressed]);
 
   useEffect(() => {
-    if (!suggestions.length || !reportReady || isMobile) {
+    if (!suggestions.length || !reportReady || isMobile || isSuppressed) {
       return;
     }
 
@@ -83,6 +140,7 @@ export default function MemorySuggestionCenter({
     const maybeReveal = () => {
       if (!drawerOpen && minDelayPassedRef.current && hasReadingInteractionRef.current) {
         setTeaserVisible(true);
+        setCompactVisible(false);
       }
     };
 
@@ -99,6 +157,7 @@ export default function MemorySuggestionCenter({
     const maxTimer = window.setTimeout(() => {
       if (!drawerOpen) {
         setTeaserVisible(true);
+        setCompactVisible(false);
       }
     }, MAX_TEASER_DELAY_MS);
 
@@ -113,7 +172,7 @@ export default function MemorySuggestionCenter({
       window.removeEventListener("click", markInteraction);
       window.removeEventListener("keydown", markInteraction);
     };
-  }, [suggestions, reportReady, isMobile, drawerOpen]);
+  }, [suggestions, reportReady, isMobile, drawerOpen, isSuppressed]);
 
   useEffect(() => {
     if (!drawerOpen) {
@@ -133,23 +192,35 @@ export default function MemorySuggestionCenter({
     setCompactVisible(false);
   };
 
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-    if (suggestions.length) {
-      setCompactVisible(true);
+  const suppressToCompact = () => {
+    if (reminderScopeKey) {
+      const nextSuppressedScopes = Array.from(new Set([...readSuppressedScopes(), reminderScopeKey]));
+      writeSuppressedScopes(nextSuppressedScopes);
+      setSuppressedScopeKey(reminderScopeKey);
     }
+
+    setTeaserVisible(false);
+    setDrawerOpen(false);
+    setCompactVisible(suggestions.length > 0);
   };
 
   const dismissTeaser = () => {
+    suppressToCompact();
+  };
+
+  const closeDrawer = () => {
+    suppressToCompact();
+  };
+
+  const hideDrawerWithoutBadge = () => {
+    setDrawerOpen(false);
     setTeaserVisible(false);
-    setCompactVisible(true);
+    setCompactVisible(false);
   };
 
   const handleDismissAll = () => {
     onDismissAll();
-    setDrawerOpen(false);
-    setTeaserVisible(false);
-    setCompactVisible(false);
+    hideDrawerWithoutBadge();
   };
 
   if (!mounted || !suggestions.length || isMobile) {
@@ -180,7 +251,7 @@ export default function MemorySuggestionCenter({
                   现在查看
                 </button>
                 <button type="button" onClick={dismissTeaser} className="ghost-btn px-3 py-1.5 text-xs">
-                  稍后查看
+                  稍后再看
                 </button>
               </div>
             </div>

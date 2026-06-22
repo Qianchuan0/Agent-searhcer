@@ -7,6 +7,7 @@ import HistoryPanel from '@/components/shell/HistoryPanel';
 import WorkflowPanel from '@/components/shell/WorkflowPanel';
 import SourcesPanel from '@/components/shell/SourcesPanel';
 import HelpPanel from '@/components/shell/HelpPanel';
+import MemoryManager from '@/components/shell/MemoryManager';
 
 interface TripleLayoutProps {
   children: React.ReactNode;
@@ -18,10 +19,6 @@ interface TripleLayoutProps {
   onNewResearch?: () => void;
 }
 
-/**
- * 桌面三栏布局入口：AppShell + 中栏顶部工具栏 + 滚动内容区。
- * 顶部工具栏承接旧 Header 的 Stop/New 操作与 Inspector 折叠切换。
- */
 export default function TripleLayout({
   children,
   mainContentRef,
@@ -35,13 +32,16 @@ export default function TripleLayout({
   const inspectorOpen = useResearchStore((s) => s.inspectorOpen);
   const setInspectorOpen = useResearchStore((s) => s.setInspectorOpen);
   const setActiveNav = useResearchStore((s) => s.setActiveNav);
+
   const titleMap = {
     home: showResult ? '研究工作区' : '开始新的研究',
     conversations: '历史记录',
     workflow: '执行流程',
     resources: '资料来源',
+    memory: '长期记忆',
     help: '使用帮助',
   } as const;
+
   const middleContent =
     activeNav === 'conversations'
       ? <HistoryPanel />
@@ -49,24 +49,22 @@ export default function TripleLayout({
         ? <WorkflowPanel />
         : activeNav === 'resources'
           ? <SourcesPanel />
-          : activeNav === 'help'
-            ? <HelpPanel />
-            : children;
+          : activeNav === 'memory'
+            ? <MemoryManager />
+            : activeNav === 'help'
+              ? <HelpPanel />
+              : children;
 
   const middle = (
     <>
       <Toaster position="bottom-center" />
 
-      {/* 顶部工具栏 */}
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-3 glass-panel">
+      <div className="glass-panel flex items-center justify-between gap-3 border-b border-[var(--border)] px-5 py-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-ink">
-            {titleMap[activeNav]}
-          </p>
+          <p className="truncate text-sm font-medium text-ink">{titleMap[activeNav]}</p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Inspector 折叠/展开切换 */}
           <button
             type="button"
             onClick={() => setInspectorOpen(!inspectorOpen)}
@@ -79,7 +77,6 @@ export default function TripleLayout({
             </svg>
           </button>
 
-          {/* 停止按钮：研究进行中显示 */}
           {loading && !isStopped && (
             <button
               type="button"
@@ -90,7 +87,6 @@ export default function TripleLayout({
             </button>
           )}
 
-          {/* 新研究按钮：研究停止或完成后显示 */}
           {(isStopped || !loading) && showResult && (
             <button
               type="button"
@@ -106,7 +102,6 @@ export default function TripleLayout({
         </div>
       </div>
 
-      {/* 内容滚动区 */}
       <div ref={mainContentRef} className="app-scrollbar relative flex-1 overflow-y-auto">
         {middleContent}
       </div>

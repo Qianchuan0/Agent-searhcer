@@ -34,7 +34,7 @@ const ITEMS: NavItemDef[] = [
   {
     key: 'workflow',
     label: '执行流程',
-    helper: '追踪进度',
+    helper: '追踪研究进度',
     icon: (
       <svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 6.75h9M7.5 12h5.25M7.5 17.25h9" />
@@ -45,11 +45,23 @@ const ITEMS: NavItemDef[] = [
   {
     key: 'resources',
     label: '资料来源',
-    helper: '管理引用',
+    helper: '管理引用材料',
     icon: (
       <svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-7.5A2.25 2.25 0 0017.25 4.5H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25h10.5a2.25 2.25 0 002.25-2.25V16.5" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 8.25h7.5M8.25 12h7.5M8.25 15.75h4.5" />
+      </svg>
+    ),
+  },
+  {
+    key: 'memory',
+    label: '长期记忆',
+    helper: '管理跨研究记忆',
+    icon: (
+      <svg className="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75v10.5" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 9.75V8.625A3.375 3.375 0 0111.625 5.25h.75A3.375 3.375 0 0115.75 8.625V9.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 9.75h10.5v7.125A1.875 1.875 0 0115.375 18.75H8.625A1.875 1.875 0 016.75 16.875V9.75z" />
       </svg>
     ),
   },

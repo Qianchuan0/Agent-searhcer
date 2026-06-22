@@ -145,8 +145,18 @@ async def create_chat_completion(
 
         return response
 
-    logging.error(f"Failed to get response from {llm_provider} API")
-    raise RuntimeError(f"Failed to get response from {llm_provider} API") from last_exception
+    base_url = os.environ.get("OPENAI_BASE_URL", "") if llm_provider == "openai" else ""
+    provider_label = (
+        f"{llm_provider}-compatible API"
+        if llm_provider == "openai" and base_url
+        else f"{llm_provider} API"
+    )
+    details = f"model={model}"
+    if base_url:
+        details += f", base_url={base_url}"
+
+    logging.error(f"Failed to get response from {provider_label} ({details})")
+    raise RuntimeError(f"Failed to get response from {provider_label} ({details})") from last_exception
 
 
 async def construct_subtopics(

@@ -1,5 +1,6 @@
 @echo off
 setlocal
+chcp 65001 >nul
 
 cd /d "%~dp0"
 
@@ -9,6 +10,8 @@ set "BACKEND_OUT=%LOG_DIR%\backend.out.log"
 set "BACKEND_ERR=%LOG_DIR%\backend.err.log"
 set "FRONTEND_OUT=%LOG_DIR%\frontend.out.log"
 set "FRONTEND_ERR=%LOG_DIR%\frontend.err.log"
+set "PYTHONIOENCODING=utf-8"
+set "PYTHONUTF8=1"
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
@@ -28,12 +31,7 @@ if errorlevel 1 (
 )
 
 echo Cleaning previous dev processes...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "Get-CimInstance Win32_Process | Where-Object { ^
-    ($_.Name -eq 'python.exe' -and $_.CommandLine -like '*uvicorn main:app*') -or ^
-    ($_.Name -eq 'node.exe' -and $_.CommandLine -like '*next*') -or ^
-    ($_.Name -eq 'cmd.exe' -and $_.CommandLine -like '*npm*run*dev*') ^
-  } | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process | Where-Object { ($_.Name -eq 'python.exe' -and $_.CommandLine -like '*uvicorn main:app*') -or ($_.Name -eq 'node.exe' -and $_.CommandLine -like '*next*') -or ($_.Name -eq 'cmd.exe' -and $_.CommandLine -like '*npm*run*dev*') } | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }"
 
 timeout /t 2 >nul
 
@@ -58,8 +56,7 @@ echo.
 timeout /t 8 >nul
 
 echo Current listening ports:
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ports = 8000,3001; Get-NetTCPConnection -State Listen -LocalPort $ports -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess, State | Format-Table -AutoSize"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ports = 8000,3001; Get-NetTCPConnection -State Listen -LocalPort $ports -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess, State | Format-Table -AutoSize"
 
 echo.
 echo First frontend startup may take a little while while Next.js compiles the app.

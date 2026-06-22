@@ -142,6 +142,32 @@ export default function Home() {
     ];
   };
 
+  const queueClarificationLogs = (newQuestion: string) => {
+    clearStartupLogTimers();
+    setOrderedData([createQuestionEvent(newQuestion)]);
+
+    startupLogTimersRef.current = [
+      window.setTimeout(() => {
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          createStatusEvent('starting_research', '正在为你分析问题...', {
+            source: 'client',
+            stage: 'clarification',
+          }),
+        ]);
+      }, 160),
+      window.setTimeout(() => {
+        setOrderedData((prevOrder) => [
+          ...prevOrder,
+          createStatusEvent('planning_research', '正在确认研究方向...', {
+            source: 'client',
+            stage: 'clarification',
+          }),
+        ]);
+      }, 900),
+    ];
+  };
+
   const composeClarifiedQuery = (
     originalQuestion: string,
     clarification: ClarificationPayload | null,
@@ -184,9 +210,11 @@ export default function Home() {
   };
 
   const requestClarification = async (newQuestion: string) => {
+    let handedOffToResearch = false;
+
     setIsInChatMode(false);
     setShowResult(true);
-    setLoading(false);
+    setLoading(true);
     setQuestion(newQuestion);
     setPromptValue("");
     setAnswer("");
@@ -196,8 +224,7 @@ export default function Home() {
     setQuestionForHuman(null);
     setClarificationPayload(null);
     setPendingResearchQuestion(newQuestion);
-    clearStartupLogTimers();
-    setOrderedData([createQuestionEvent(newQuestion)]);
+    queueClarificationLogs(newQuestion);
 
     if (isMobile) {
       await startConfirmedResearch(newQuestion);
@@ -219,16 +246,30 @@ export default function Home() {
 
       const payload = (await response.json()) as ClarificationPayload;
       if (!payload?.sections?.length) {
+        handedOffToResearch = true;
         await startConfirmedResearch(newQuestion);
         return;
       }
 
+      clearStartupLogTimers();
+      setOrderedData((prevOrder) => [
+        ...prevOrder,
+        createStatusEvent('planning_research', '研究方向已生成，请确认本次研究重点。', {
+          source: 'client',
+          stage: 'clarification_ready',
+        }),
+      ]);
       setClarificationPayload(payload);
     } catch (error) {
       console.error("Error requesting clarification:", error);
+      handedOffToResearch = true;
       await startConfirmedResearch(newQuestion);
     } finally {
+      clearStartupLogTimers();
       setIsClarificationLoading(false);
+      if (!handedOffToResearch) {
+        setLoading(false);
+      }
     }
   };
 

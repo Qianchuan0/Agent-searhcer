@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { create } from "zustand";
 import {
   MemoryCreateRequest,
   MemoryItem,
@@ -11,10 +12,73 @@ import {
   ResearchClassificationResponse,
 } from "../types/data";
 
+const MEMORY_SETTINGS_STORAGE_KEY = "gptr-memory-settings";
+
+interface ResearchMemoryState {
+  settings: MemorySettings | null;
+  items: MemoryItem[];
+  loading: boolean;
+  initialized: boolean;
+  setSettings: (settings: MemorySettings | null) => void;
+  setItems: (items: MemoryItem[]) => void;
+  setLoading: (loading: boolean) => void;
+  setInitialized: (initialized: boolean) => void;
+}
+
+const readCachedSettings = (): MemorySettings | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = localStorage.getItem(MEMORY_SETTINGS_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as MemorySettings) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedSettings = (settings: MemorySettings | null) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    if (!settings) {
+      localStorage.removeItem(MEMORY_SETTINGS_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(MEMORY_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore local cache failures and keep network state authoritative.
+  }
+};
+
+const useResearchMemoryStore = create<ResearchMemoryState>((set) => ({
+  settings: readCachedSettings(),
+  items: [],
+  loading: false,
+  initialized: false,
+  setSettings: (settings) => {
+    writeCachedSettings(settings);
+    set({ settings });
+  },
+  setItems: (items) => set({ items }),
+  setLoading: (loading) => set({ loading }),
+  setInitialized: (initialized) => set({ initialized }),
+}));
+
 export const useResearchMemory = () => {
-  const [settings, setSettings] = useState<MemorySettings | null>(null);
-  const [items, setItems] = useState<MemoryItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {
+    settings,
+    items,
+    loading,
+    initialized,
+    setSettings,
+    setItems,
+    setLoading,
+    setInitialized,
+  } = useResearchMemoryStore();
 
   const refreshSettings = async () => {
     const response = await fetch("/api/memory/settings");
@@ -52,8 +116,9 @@ export const useResearchMemory = () => {
       throw new Error(`Failed to fetch memory items: ${response.status}`);
     }
     const data = (await response.json()) as { items: MemoryItem[] };
-    setItems(data.items || []);
-    return data.items || [];
+    const nextItems = data.items || [];
+    setItems(nextItems);
+    return nextItems;
   };
 
   const createItem = async (payload: MemoryCreateRequest) => {
@@ -66,7 +131,7 @@ export const useResearchMemory = () => {
       throw new Error(`Failed to create memory item: ${response.status}`);
     }
     const data = (await response.json()) as { item: MemoryItem };
-    setItems((prev) => [data.item, ...prev]);
+    setItems([data.item, ...items]);
     return data.item;
   };
 
@@ -80,7 +145,7 @@ export const useResearchMemory = () => {
       throw new Error(`Failed to update memory item: ${response.status}`);
     }
     const data = (await response.json()) as { item: MemoryItem };
-    setItems((prev) => prev.map((item) => (item.id === memoryId ? data.item : item)));
+    setItems(items.map((item) => (item.id === memoryId ? data.item : item)));
     return data.item;
   };
 
@@ -89,7 +154,7 @@ export const useResearchMemory = () => {
     if (!response.ok) {
       throw new Error(`Failed to delete memory item: ${response.status}`);
     }
-    setItems((prev) => prev.filter((item) => item.id !== memoryId));
+    setItems(items.filter((item) => item.id !== memoryId));
     return true;
   };
 
@@ -139,18 +204,25 @@ export const useResearchMemory = () => {
   };
 
   useEffect(() => {
+    if (initialized) {
+      return;
+    }
+
     const load = async () => {
       setLoading(true);
       try {
         await refreshSettings();
         await refreshItems();
+      } catch (error) {
+        console.error("Failed to initialize research memory state:", error);
       } finally {
+        setInitialized(true);
         setLoading(false);
       }
     };
 
     void load();
-  }, []);
+  }, [initialized]);
 
   return {
     settings,

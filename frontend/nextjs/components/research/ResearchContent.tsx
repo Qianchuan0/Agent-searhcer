@@ -6,7 +6,7 @@ import LoadingDots from "@/components/LoadingDots";
 import HumanFeedback from "@/components/HumanFeedback";
 import ResearchClarification from "@/components/research/ResearchClarification";
 import ResearchMemoryBridge from "@/components/research/ResearchMemoryBridge";
-import MemorySuggestionPanel from "@/components/research/MemorySuggestionPanel";
+import MemorySuggestionCenter from "@/components/research/MemorySuggestionCenter";
 import {
   ChatBoxSettings,
   ClarificationPayload,
@@ -57,6 +57,7 @@ interface ResearchContentProps {
   pendingMemoryBridge?: ResearchClassificationResponse | null;
   onUseMemoryBridge?: () => void;
   onSkipMemoryBridge?: () => void;
+  isMobile?: boolean;
 }
 
 export default function ResearchContent({
@@ -96,6 +97,7 @@ export default function ResearchContent({
   pendingMemoryBridge = null,
   onUseMemoryBridge,
   onSkipMemoryBridge,
+  isMobile = false,
 }: ResearchContentProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const internalBottomRef = useRef<HTMLDivElement>(null);
@@ -132,19 +134,6 @@ export default function ResearchContent({
             loading={loading}
           />
         </div>
-
-        {memorySuggestions.length > 0 &&
-          onSaveMemorySuggestion &&
-          onDismissMemorySuggestion &&
-          onDismissAllMemorySuggestions && (
-            <MemorySuggestionPanel
-              suggestions={memorySuggestions}
-              savingSuggestionId={savingMemorySuggestionId}
-              onSave={onSaveMemorySuggestion}
-              onDismiss={onDismissMemorySuggestion}
-              onDismissAll={onDismissAllMemorySuggestions}
-            />
-          )}
 
         <div className="pt-1 sm:pt-2" ref={chatContainerRef}></div>
         <div ref={finalBottomRef} />
@@ -204,6 +193,21 @@ export default function ResearchContent({
           </div>
         )}
       </div>
+
+      {memorySuggestions.length > 0 &&
+        onSaveMemorySuggestion &&
+        onDismissMemorySuggestion &&
+        onDismissAllMemorySuggestions && (
+          <MemorySuggestionCenter
+            suggestions={memorySuggestions}
+            savingSuggestionId={savingMemorySuggestionId}
+            onSave={onSaveMemorySuggestion}
+            onDismiss={onDismissMemorySuggestion}
+            onDismissAll={onDismissAllMemorySuggestions}
+            reportReady={showResult && !loading && !!answer}
+            isMobile={isMobile}
+          />
+        )}
     </div>
   );
 }

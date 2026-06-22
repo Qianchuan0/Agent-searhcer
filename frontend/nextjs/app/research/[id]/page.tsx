@@ -3,8 +3,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useResearchHistoryContext } from "@/hooks/ResearchHistoryContext";
+import { useResearchMemory } from "@/hooks/useResearchMemory";
 import { preprocessOrderedData } from "@/utils/dataProcessing";
-import { ChatBoxSettings, Data, ChatData, ChatMessage, QuestionData } from "@/types/data";
+import { ChatBoxSettings, Data, ChatData, ChatMessage, MemorySuggestion, QuestionData } from "@/types/data";
 import { toast } from "react-hot-toast";
 import { getAppropriateLayout } from "@/utils/getLayout";
 
@@ -28,6 +29,8 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
   const [isStopped, setIsStopped] = useState(false);
   const [currentResearchId, setCurrentResearchId] = useState<string | null>(null);
   const [isProcessingChat, setIsProcessingChat] = useState(false);
+  const [memorySuggestions, setMemorySuggestions] = useState<MemorySuggestion[]>([]);
+  const [savingMemorySuggestionId, setSavingMemorySuggestionId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [chatBoxSettings, setChatBoxSettings] = useState<ChatBoxSettings>(() => {
@@ -65,6 +68,8 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
   const [fetchAttempted, setFetchAttempted] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const toastShownRef = useRef(false);
+  const suggestionRequestRef = useRef<string | null>(null);
+  const dismissedSuggestionReportsRef = useRef<Set<string>>(new Set());
 
   const { 
     history,
@@ -74,6 +79,11 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
     updateResearch,
     deleteResearch
   } = useResearchHistoryContext();
+  const {
+    settings: memorySettings,
+    createItem: createMemoryItem,
+    getSuggestions,
+  } = useResearchMemory();
 
   // Toggle sidebar
   const toggleSidebar = () => {
@@ -303,6 +313,63 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
       setTimeout(scrollToBottom, 100); // Small delay to ensure content is rendered
     }
   }, [orderedData, isProcessingChat]);
+
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      if (!currentResearchId || !answer || loading || !memorySettings?.enabled) {
+        return;
+      }
+      if (dismissedSuggestionReportsRef.current.has(currentResearchId)) {
+        return;
+      }
+      if (suggestionRequestRef.current === currentResearchId) {
+        return;
+      }
+
+      suggestionRequestRef.current = currentResearchId;
+      try {
+        const suggestions = await getSuggestions(currentResearchId);
+        setMemorySuggestions(suggestions);
+      } catch (error) {
+        console.error("Error loading memory suggestions:", error);
+      }
+    };
+
+    void loadSuggestions();
+  }, [currentResearchId, answer, loading, memorySettings?.enabled, getSuggestions]);
+
+  const handleSaveMemorySuggestion = async (suggestion: MemorySuggestion) => {
+    setSavingMemorySuggestionId(suggestion.id);
+    try {
+      await createMemoryItem({
+        type: suggestion.type,
+        title: suggestion.title,
+        content: suggestion.content,
+        summary: suggestion.content,
+        tags: suggestion.tags || [],
+        source: suggestion.source,
+        confidence: suggestion.confidence,
+      });
+      setMemorySuggestions((prev) => prev.filter((item) => item.id !== suggestion.id));
+      toast.success("已保存到长期记忆", { id: `memory-save-${id}` });
+    } catch (error: any) {
+      console.error("Error saving memory suggestion:", error);
+      toast.error(error?.message || "保存长期记忆失败", { id: `memory-save-error-${id}` });
+    } finally {
+      setSavingMemorySuggestionId(null);
+    }
+  };
+
+  const handleDismissMemorySuggestion = (suggestionId: string) => {
+    setMemorySuggestions((prev) => prev.filter((item) => item.id !== suggestionId));
+  };
+
+  const handleDismissAllMemorySuggestions = () => {
+    if (currentResearchId) {
+      dismissedSuggestionReportsRef.current.add(currentResearchId);
+    }
+    setMemorySuggestions([]);
+  };
 
   // Check if on mobile
   useEffect(() => {
@@ -552,6 +619,12 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
         currentResearchId={currentResearchId || undefined}
         onShareClick={handleCopyUrl}
         isProcessingChat={isProcessingChat}
+        memorySuggestions={memorySuggestions}
+        onSaveMemorySuggestion={handleSaveMemorySuggestion}
+        onDismissMemorySuggestion={handleDismissMemorySuggestion}
+        onDismissAllMemorySuggestions={handleDismissAllMemorySuggestions}
+        savingMemorySuggestionId={savingMemorySuggestionId}
+        isMobile={isMobile}
       />
     )
   });

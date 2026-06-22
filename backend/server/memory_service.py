@@ -249,18 +249,39 @@ class MemoryService:
         self,
         request: ResearchClassificationRequest,
     ) -> ResearchClassificationResponse:
-        search_results = await self.search(MemorySearchRequest(query=request.query, limit=5))
+        limit = max(5, len(request.candidate_memory_ids) or 5)
+        search_results = await self.search(MemorySearchRequest(query=request.query, limit=limit))
+        if request.candidate_memory_ids:
+            candidate_ids = set(request.candidate_memory_ids)
+            search_results = MemorySearchResponse(
+                results=[result for result in search_results.results if result.item.id in candidate_ids]
+            )
+
         query = request.query.lower()
 
         relation = "new_topic"
         reason = "No relevant long-term memory was found."
         strategy = "Start a fresh research flow."
 
-        if "compare" in query or "vs" in query or "对比" in request.query or "比较" in request.query:
+        if (
+            "compare" in query
+            or "vs" in query
+            or "\u5bf9\u6bd4" in request.query
+            or "\u6bd4\u8f83" in request.query
+        ):
             relation = "compare"
             reason = "The query explicitly asks for a comparison with related prior research."
             strategy = "Reuse the closest prior memories and highlight differences."
-        elif any(word in query for word in ["latest", "update", "refresh", "today", "最近", "最新", "刷新"]):
+        elif any(word in query for word in ["latest", "update", "refresh", "today"]) or any(
+            word in request.query
+            for word in [
+                "\u6700\u8fd1",
+                "\u6700\u65b0",
+                "\u5237\u65b0",
+                "\u8fdb\u5c55",
+                "\u73b0\u72b6",
+            ]
+        ):
             relation = "refresh"
             reason = "The query suggests prior knowledge may need to be refreshed."
             strategy = "Reuse prior context, then verify which conclusions still hold."

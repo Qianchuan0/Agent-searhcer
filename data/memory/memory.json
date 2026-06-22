@@ -1,7 +1,7 @@
 {
   "settings": {
     "enabled": true,
-    "updated_at": "2026-06-22T08:05:24.059985Z"
+    "updated_at": "2026-06-22T10:26:17.325397Z"
   },
   "items": {
     "memory_905a943af74f4bb9899b575523e8bb12": {
@@ -31,6 +31,99 @@
       "status": "active",
       "created_at": "2026-06-22T08:14:22.060220Z",
       "updated_at": "2026-06-22T08:14:22.060220Z",
+      "last_used_at": null,
+      "expires_at": null,
+      "embedding_id": null
+    },
+    "memory_054ef3b2f12d439dadc90dde67a8a95e": {
+      "id": "memory_054ef3b2f12d439dadc90dde67a8a95e",
+      "scope": "local",
+      "type": "report_index",
+      "title": "什么是contextEngineer",
+      "content": "Question: 什么是contextEngineer\n\nSummary:\n# 上下文工程：从Prompt到动态系统级管理的范式革命",
+      "summary": "# 上下文工程：从Prompt到动态系统级管理的范式革命 ## 综合研究报告 --- ## 摘要 上下文工程（Context Engineering）是2025至2026年间人工智能领域最具变革性的工程范式之一。它标志着AI系统设计从“如何写指令”向“如何管理信息环境”的根本性转变。本报告基于多层次研究资料的综合分析，系统梳理了上下文工程的定义、发展时...",
+      "tags": [
+        "什么是contextengineer",
+        "上下文工程",
+        "从prompt到动态系统级管理的范式革命",
+        "综合研究报告",
+        "摘要",
+        "context",
+        "engineering",
+        "是2025至2026年间人工智能领域最具变革性的"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "9b81153e-afed-4872-9778-3ab6a54af11c",
+        "message_id": null,
+        "created_from": "report_index"
+      },
+      "confidence": "high",
+      "status": "disabled",
+      "created_at": "2026-06-22T09:36:25.488450Z",
+      "updated_at": "2026-06-22T09:52:16.747292Z",
+      "last_used_at": null,
+      "expires_at": null,
+      "embedding_id": null
+    },
+    "memory_e3e604baf8ab486b88b32f5a8b89e4d1": {
+      "id": "memory_e3e604baf8ab486b88b32f5a8b89e4d1",
+      "scope": "local",
+      "type": "report_index",
+      "title": "帮我规划一趟旅行，目的地是：山东",
+      "content": "Question: 帮我规划一趟旅行，目的地是：山东\n\nSummary:\n# 研究报告：2026年6月山东文化古迹精华游（泰山-曲阜）",
+      "summary": "# 研究报告：2026年6月山东文化古迹精华游（泰山-曲阜） ## 摘要 本报告旨在为2026年6月下旬（基于当前日期2026年6月22日）前往山东省进行文化古迹主题短途旅行提供全面、客观的行程规划。研究重点围绕“一山（泰山）一圣（曲阜三孔）”两大核心世界遗产地，结合交通可达性、预算成本与季节性因素，整合分析了来自旅游攻略、票务平台、交通官网及新闻资讯...",
+      "tags": [
+        "帮我规划一趟旅行",
+        "目的地是",
+        "山东",
+        "研究报告",
+        "2026年6月山东文化古迹精华游",
+        "泰山",
+        "曲阜",
+        "摘要"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "b9a20ab9-27ec-4bad-90f6-21c92dac5485",
+        "message_id": null,
+        "created_from": "report_index"
+      },
+      "confidence": "high",
+      "status": "active",
+      "created_at": "2026-06-22T09:59:14.008310Z",
+      "updated_at": "2026-06-22T09:59:14.008310Z",
+      "last_used_at": null,
+      "expires_at": null,
+      "embedding_id": null
+    },
+    "memory_9c1be8158f56466ba58f8fa054b44545": {
+      "id": "memory_9c1be8158f56466ba58f8fa054b44545",
+      "scope": "local",
+      "type": "research_knowledge",
+      "title": "什么是context Engineer?",
+      "content": "# 上下文工程师（Context Engineer）定义与核心职责研究报告 ## 摘要 随着大语言模型（LLM）应用从单轮对话转向复杂的多步智能体和多工具集成系统，一个新的工程角色——**上下文工程师（Context Engineer）**——正在迅速成为AI开发的核心岗位。与传统提示工程师（Prompt Engineer）聚焦于编写单个指令不同，上下...",
+      "summary": "# 上下文工程师（Context Engineer）定义与核心职责研究报告 ## 摘要 随着大语言模型（LLM）应用从单轮对话转向复杂的多步智能体和多工具集成系统，一个新的工程角色——**上下文工程师（Context Engineer）**——正在迅速成为AI开发的核心岗位。与传统提示工程师（Prompt Engineer）聚焦于编写单个指令不同，上下...",
+      "tags": [
+        "什么是context",
+        "engineer",
+        "上下文工程师",
+        "context",
+        "定义与核心职责研究报告",
+        "摘要",
+        "随着大语言模型",
+        "llm"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "0b7ea5d2-a9df-4d15-a5b6-421a05ca66b9",
+        "message_id": null,
+        "created_from": "memory_suggestion"
+      },
+      "confidence": "medium",
+      "status": "active",
+      "created_at": "2026-06-22T10:28:40.210718Z",
+      "updated_at": "2026-06-22T10:28:40.210718Z",
       "last_used_at": null,
       "expires_at": null,
       "embedding_id": null

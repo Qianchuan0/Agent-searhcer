@@ -147,17 +147,19 @@ export default function Home() {
 
     const contextLines = relatedMemories.slice(0, 3).map((entry, index) => {
       const sourceReport = entry.item.source.report_id || "unknown";
-      return `${index + 1}. ${entry.item.title}\n摘要：${entry.item.summary}\n来源报告：${sourceReport}`;
+      return `${index + 1}. ${entry.item.title}
+\u6458\u8981\uff1a${entry.item.summary}
+\u6765\u6e90\u62a5\u544a\uff1a${sourceReport}`;
     });
 
     return [
       researchQuestion,
       "",
-      "历史研究上下文：",
+      "\u5386\u53f2\u7814\u7a76\u4e0a\u4e0b\u6587\uff1a",
       ...contextLines,
       "",
-      "请把以上内容当作带来源的历史结论，而不是当前已验证事实。",
-      "请在本次报告中明确区分：哪些是历史结论复用，哪些是本次新增发现。",
+      "\u8bf7\u628a\u4ee5\u4e0a\u5185\u5bb9\u89c6\u4e3a\u5e26\u6765\u6e90\u7684\u5386\u53f2\u7ed3\u8bba\uff0c\u800c\u4e0d\u662f\u5f53\u524d\u5df2\u7ecf\u9a8c\u8bc1\u7684\u4e8b\u5b9e\u3002",
+      "\u8bf7\u5728\u672c\u6b21\u62a5\u544a\u4e2d\u660e\u786e\u533a\u5206\uff1a\u54ea\u4e9b\u662f\u5386\u53f2\u7ed3\u8bba\u590d\u7528\uff0c\u54ea\u4e9b\u662f\u672c\u6b21\u65b0\u589e\u53d1\u73b0\u3002",
     ].join("\n");
   };
 
@@ -181,7 +183,7 @@ export default function Home() {
       setPendingMemoryBridgeQuestion({ researchQuestion, displayQuestion });
       setOrderedData((prevOrder) => [
         ...prevOrder,
-        createStatusEvent('planning_research', '发现相关历史研究，请先确认是否承接旧结论。', {
+        createStatusEvent('planning_research', '\u53d1\u73b0\u76f8\u5173\u5386\u53f2\u7814\u7a76\uff0c\u8bf7\u5148\u786e\u8ba4\u662f\u5426\u627f\u63a5\u65e7\u7ed3\u8bba\u3002', {
           source: 'client',
           stage: 'memory_bridge',
         }),
@@ -234,7 +236,7 @@ export default function Home() {
       window.setTimeout(() => {
         setOrderedData((prevOrder) => [
           ...prevOrder,
-          createStatusEvent('planning_research', '正在确认研究方向...', {
+          createStatusEvent('planning_research', '\u6b63\u5728\u786e\u8ba4\u7814\u7a76\u65b9\u5411...', {
             source: 'client',
             stage: 'clarification',
           }),
@@ -263,7 +265,7 @@ export default function Home() {
           .filter((option) => selectedIds.includes(option.id))
           .map((option) => option.label);
 
-        return labels.length > 0 ? `- ${section.title}: ${labels.join("；")}` : null;
+        return labels.length > 0 ? `- ${section.title}: ${labels.join("\uff0c")}` : null;
       })
       .filter(Boolean);
 
@@ -274,13 +276,13 @@ export default function Home() {
     }
 
     return [
-      `原始研究问题：${originalQuestion}`,
+      `\u539f\u59cb\u7814\u7a76\u95ee\u9898\uff1a${originalQuestion}`,
       "",
-      "研究方向确认：",
+      "\u7814\u7a76\u65b9\u5411\u786e\u8ba4\uff1a",
       ...sectionLines,
-      ...(note ? [`- 补充要求：${note}`] : []),
+      ...(note ? [`- \u8865\u5145\u8981\u6c42\uff1a${note}`] : []),
       "",
-      "请严格基于以上已确认的研究方向开展研究，并在报告中优先覆盖这些重点。",
+      "\u8bf7\u4e25\u683c\u57fa\u4e8e\u4ee5\u4e0a\u5df2\u786e\u8ba4\u7684\u7814\u7a76\u65b9\u5411\u5f00\u5c55\u7814\u7a76\uff0c\u5e76\u5728\u62a5\u544a\u4e2d\u4f18\u5148\u8986\u76d6\u8fd9\u4e9b\u91cd\u70b9\u3002",
     ].join("\n");
   };
 
@@ -1497,6 +1499,7 @@ export default function Home() {
               pendingMemoryBridge={pendingMemoryBridge}
               onUseMemoryBridge={handleUseMemoryBridge}
               onSkipMemoryBridge={handleSkipMemoryBridge}
+              isMobile={isMobile}
             />
           )
         })

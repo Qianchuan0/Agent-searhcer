@@ -8,6 +8,44 @@ interface ResearchMemoryBridgeProps {
   onSkipMemory: () => void;
 }
 
+const relationLabelMap = {
+  new_topic: "全新研究",
+  follow_up: "旧主题追问",
+  refresh: "旧主题刷新",
+  compare: "旧主题对比",
+} as const;
+
+const confidenceLabelMap = {
+  low: "低",
+  medium: "中",
+  high: "高",
+} as const;
+
+const stalenessLabelMap = {
+  fresh: "较新",
+  possibly_stale: "可能过期",
+  stale: "已过期",
+} as const;
+
+function formatDate(value?: string) {
+  if (!value) {
+    return "未知时间";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function ResearchMemoryBridge({
   classification,
   onUseMemory,
@@ -22,7 +60,7 @@ export default function ResearchMemoryBridge({
       </p>
       <h3 className="mt-1 text-base font-semibold text-ink">发现相关历史研究</h3>
       <p className="mt-2 text-sm leading-6 text-ink-secondary">
-        关系判断：{classification.relation}。{classification.reason}
+        关系判断：{relationLabelMap[classification.relation]}。{classification.reason}
       </p>
       <p className="mt-2 text-sm leading-6 text-ink-secondary">
         建议策略：{classification.suggested_strategy}
@@ -39,8 +77,17 @@ export default function ResearchMemoryBridge({
                 <div>
                   <h4 className="text-sm font-semibold text-ink">{entry.item.title}</h4>
                   <p className="mt-1 text-xs text-ink-secondary">
-                    来源报告：{entry.item.source.report_id || "unknown"} · 相关度 {entry.score.toFixed(2)}
+                    来源报告：{entry.item.source.report_id || "unknown"} | 相关度：{entry.score.toFixed(2)}
                   </p>
+                  <p className="mt-1 text-xs text-ink-secondary">
+                    创建时间：{formatDate(entry.item.created_at)} | 可信度：
+                    {confidenceLabelMap[entry.item.confidence]}
+                  </p>
+                  {!!entry.findings[0] && (
+                    <p className="mt-1 text-xs text-ink-secondary">
+                      时效性：{stalenessLabelMap[entry.findings[0].staleness]}
+                    </p>
+                  )}
                 </div>
                 <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[11px] text-ink-secondary">
                   {entry.item.type}

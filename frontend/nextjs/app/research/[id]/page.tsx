@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useResearchHistoryContext } from "@/hooks/ResearchHistoryContext";
 import { useResearchMemory } from "@/hooks/useResearchMemory";
+import { useResearchStore } from "@/stores/researchStore";
 import { preprocessOrderedData } from "@/utils/dataProcessing";
 import { ChatBoxSettings, Data, ChatData, ChatMessage, MemorySuggestion, QuestionData } from "@/types/data";
 import { toast } from "react-hot-toast";
@@ -35,6 +36,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
   const [isProcessingChat, setIsProcessingChat] = useState(false);
   const [memorySuggestions, setMemorySuggestions] = useState<MemorySuggestion[]>([]);
   const [savingMemorySuggestionId, setSavingMemorySuggestionId] = useState<string | null>(null);
+  const [memorySuggestionNotice, setMemorySuggestionNotice] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [chatBoxSettings, setChatBoxSettings] = useState<ChatBoxSettings>(() => {
@@ -88,6 +90,12 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
     createItem: createMemoryItem,
     getSuggestions,
   } = useResearchMemory();
+  const setActiveNav = useResearchStore((s) => s.setActiveNav);
+
+  // 详情页挂载时确保中间区域渲染报告内容，而非历史面板
+  useEffect(() => {
+    setActiveNav('home');
+  }, [setActiveNav]);
 
   // Toggle sidebar
   const toggleSidebar = () => {
@@ -342,6 +350,9 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
       suggestionRequestRef.current = currentResearchId;
       try {
         const result = await getSuggestions(currentResearchId);
+        setMemorySuggestionNotice(
+          result.metadata?.blocked && result.metadata.reason ? result.metadata.reason : null
+        );
         if (result.metadata?.blocked && result.metadata.reason) {
           toast(result.metadata.reason, { icon: "🔒", id: `memory-blocked-${id}` });
         }
@@ -642,6 +653,7 @@ export default function ResearchPage({ params }: { params: { id: string } }) {
         onDismissMemorySuggestion={handleDismissMemorySuggestion}
         onDismissAllMemorySuggestions={handleDismissAllMemorySuggestions}
         savingMemorySuggestionId={savingMemorySuggestionId}
+        memorySuggestionNotice={memorySuggestionNotice}
         isMobile={isMobile}
       />
     )

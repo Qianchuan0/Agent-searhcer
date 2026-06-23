@@ -4,13 +4,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useResearchHistoryContext } from '@/hooks/ResearchHistoryContext';
-import { useResearchStore } from '@/stores/researchStore';
 
 export default function HistoryPanel() {
   const pathname = usePathname();
   const router = useRouter();
   const { history, deleteResearch } = useResearchHistoryContext();
-  const setActiveNav = useResearchStore((s) => s.setActiveNav);
 
   const sortedHistory = [...history].sort((a, b) => b.timestamp - a.timestamp);
 
@@ -27,7 +25,6 @@ export default function HistoryPanel() {
   };
 
   const openResearch = (id: string) => {
-    setActiveNav('home');
     router.push(`/research/${id}`);
   };
 

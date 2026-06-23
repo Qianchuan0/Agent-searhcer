@@ -195,7 +195,7 @@ class MemoryService:
                 )
             )
 
-        ranked.sort(key=lambda entry: entry.score, reverse=True)
+        ranked.sort(key=self._search_sort_key)
         top_results = ranked[: max(1, min(request.limit, 20))]
 
         if top_results:
@@ -284,6 +284,12 @@ class MemoryService:
                 results=[result for result in search_results.results if result.item.id in candidate_ids]
             )
 
+        bridge_results = [
+            result
+            for result in search_results.results
+            if result.item.type != "user_preference" and self._bridge_bucket(result.item) != 3
+        ]
+
         query = request.query.lower()
 
         relation = "new_topic"
@@ -312,7 +318,7 @@ class MemoryService:
             relation = "refresh"
             reason = "The query suggests prior knowledge may need to be refreshed."
             strategy = "Reuse prior context, then verify which conclusions still hold."
-        elif search_results.results and search_results.results[0].score >= 0.2:
+        elif bridge_results and bridge_results[0].score >= 0.2:
             relation = "follow_up"
             reason = "Relevant prior memories were found with meaningful topic overlap."
             strategy = "Carry over the strongest prior findings as context and focus on new additions."
@@ -321,7 +327,7 @@ class MemoryService:
             relation=relation,
             reason=reason,
             suggested_strategy=strategy,
-            related_memories=search_results.results,
+            related_memories=bridge_results,
         )
 
     async def get_report_memory(self, report_id: str) -> ReportMemoryResponse:
@@ -426,9 +432,29 @@ class MemoryService:
 
         unique_query_tokens = len(set(query_tokens)) or 1
         lexical_score = len(set(matched_terms)) / unique_query_tokens
-        type_bonus = 0.05 if item.type in {"research_knowledge", "report_index"} else 0.0
+        type_bonus = 0.08 if item.type == "research_knowledge" else 0.05 if item.type == "report_index" else 0.0
+        bridge_bonus = 0.04 if self._bridge_bucket(item) == 0 else 0.0
+        fallback_penalty = -0.05 if self._bridge_bucket(item) == 2 else 0.0
         confidence_bonus = {"low": 0.0, "medium": 0.03, "high": 0.06}[item.confidence]
-        return min(1.0, lexical_score + type_bonus + confidence_bonus), sorted(set(matched_terms))
+        return min(1.0, max(0.0, lexical_score + type_bonus + bridge_bonus + fallback_penalty + confidence_bonus)), sorted(set(matched_terms))
+
+    def _search_sort_key(self, entry: MemorySearchResult) -> tuple[float, int, float, float]:
+        item = entry.item
+        return (
+            self._bridge_bucket(item),
+            -entry.score,
+            -1.0 if item.core_claim else 0.0,
+            -item.created_at.timestamp(),
+        )
+
+    def _bridge_bucket(self, item: MemoryItem) -> int:
+        if item.type in {"research_knowledge", "report_index"} and item.core_claim:
+            return 0
+        if item.type in {"saved_context", "research_interest"}:
+            return 1
+        if item.type in {"research_knowledge", "report_index"}:
+            return 2
+        return 3
 
     def _tokenize(self, text: str) -> List[str]:
         normalized = re.sub(r"[^\w\u4e00-\u9fff]+", " ", text.lower())

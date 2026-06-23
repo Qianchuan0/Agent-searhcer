@@ -82,6 +82,7 @@ export default function Home() {
   const [isClarificationLoading, setIsClarificationLoading] = useState(false);
   const [memorySuggestions, setMemorySuggestions] = useState<MemorySuggestion[]>([]);
   const [savingMemorySuggestionId, setSavingMemorySuggestionId] = useState<string | null>(null);
+  const [memorySuggestionNotice, setMemorySuggestionNotice] = useState<string | null>(null);
   const [pendingMemoryBridge, setPendingMemoryBridge] = useState<ResearchClassificationResponse | null>(null);
   const [pendingMemoryBridgeQuestion, setPendingMemoryBridgeQuestion] = useState<{
     researchQuestion: string;
@@ -150,27 +151,48 @@ export default function Home() {
 
   const buildMemoryGroundedQuestion = (
     researchQuestion: string,
-    relatedMemories: MemorySearchResult[]
+    relatedMemories: MemorySearchResult[],
+    relation: ResearchClassificationResponse["relation"]
   ) => {
     if (!relatedMemories.length) {
       return researchQuestion;
     }
 
-    const contextLines = relatedMemories.slice(0, 3).map((entry, index) => {
+    const relationConstraintMap: Record<
+      ResearchClassificationResponse["relation"],
+      string
+    > = {
+      new_topic: "本次按全新研究处理，不需要复用旧结论。",
+      follow_up: "把旧结论视为背景前提，减少重复背景介绍，把重点放在本次新增补充。",
+      refresh: "把旧结论视为待验证命题，明确说明哪些仍成立，哪些已经变化或需要更新。",
+      compare: "把旧结论视为对比基线，突出新旧差异，不能只重复旧结论。",
+    };
+
+    const contextLines = relatedMemories.map((entry, index) => {
       const sourceReport = entry.item.source.report_id || "unknown";
+      const coreClaim = entry.item.core_claim || entry.item.summary;
+      const staleness = entry.findings[0]?.staleness || "possibly_stale";
       return `${index + 1}. ${entry.item.title}
-\u6458\u8981\uff1a${entry.item.summary}
-\u6765\u6e90\u62a5\u544a\uff1a${sourceReport}`;
+核心结论：${coreClaim}
+摘要说明：${entry.item.summary}
+来源报告：${sourceReport}
+创建时间：${entry.item.created_at}
+可信度：${entry.item.confidence}
+时效性：${staleness}`;
     });
 
     return [
       researchQuestion,
       "",
-      "\u5386\u53f2\u7814\u7a76\u4e0a\u4e0b\u6587\uff1a",
+      "历史研究上下文：",
       ...contextLines,
       "",
-      "\u8bf7\u628a\u4ee5\u4e0a\u5185\u5bb9\u89c6\u4e3a\u5e26\u6765\u6e90\u7684\u5386\u53f2\u7ed3\u8bba\uff0c\u800c\u4e0d\u662f\u5f53\u524d\u5df2\u7ecf\u9a8c\u8bc1\u7684\u4e8b\u5b9e\u3002",
-      "\u8bf7\u5728\u672c\u6b21\u62a5\u544a\u4e2d\u660e\u786e\u533a\u5206\uff1a\u54ea\u4e9b\u662f\u5386\u53f2\u7ed3\u8bba\u590d\u7528\uff0c\u54ea\u4e9b\u662f\u672c\u6b21\u65b0\u589e\u53d1\u73b0\u3002",
+      `关系类型约束：${relation}。${relationConstraintMap[relation]}`,
+      "写作硬约束：",
+      "1. 历史结论必须被视为带来源的旧研究判断，不能直接当作本次已验证事实。",
+      "2. 报告必须明确区分“历史研究引用”和“本次新增发现”。",
+      "3. 对可能过期的旧结论要复核、更新，或明确标注其时效性风险。",
+      "4. 不要把整篇旧报告全文当作本次研究结果复述。",
     ].join("\n");
   };
 
@@ -316,6 +338,7 @@ export default function Home() {
     setPendingMemoryBridge(null);
     setPendingMemoryBridgeQuestion(null);
     setMemorySuggestions([]);
+    setMemorySuggestionNotice(null);
     queueClarificationLogs(newQuestion);
 
     if (isMobile) {
@@ -930,7 +953,8 @@ export default function Home() {
 
     const groundedQuestion = buildMemoryGroundedQuestion(
       pendingMemoryBridgeQuestion.researchQuestion,
-      selectedMemories
+      selectedMemories,
+      pendingMemoryBridge.relation
     );
 
     await runConfirmedResearch(groundedQuestion, pendingMemoryBridgeQuestion.displayQuestion);
@@ -1216,6 +1240,7 @@ export default function Home() {
     setPendingMemoryBridgeQuestion(null);
     setMemorySuggestions([]);
     setSavingMemorySuggestionId(null);
+    setMemorySuggestionNotice(null);
     selectedBridgeMemoriesRef.current = [];
 
     // Reset feedback states
@@ -1359,6 +1384,9 @@ export default function Home() {
       suggestionRequestRef.current = currentResearchId;
       try {
         const result = await getSuggestions(currentResearchId);
+        setMemorySuggestionNotice(
+          result.metadata?.blocked && result.metadata.reason ? result.metadata.reason : null
+        );
         if (result.metadata?.blocked && result.metadata.reason) {
           toast(result.metadata.reason, { icon: "🔒" });
         }
@@ -1549,6 +1577,7 @@ export default function Home() {
               onDismissMemorySuggestion={handleDismissMemorySuggestion}
               onDismissAllMemorySuggestions={handleDismissAllMemorySuggestions}
               savingMemorySuggestionId={savingMemorySuggestionId}
+              memorySuggestionNotice={memorySuggestionNotice}
               pendingMemoryBridge={pendingMemoryBridge}
               onUseMemoryBridge={handleUseMemoryBridge}
               onSkipMemoryBridge={handleSkipMemoryBridge}

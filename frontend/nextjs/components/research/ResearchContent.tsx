@@ -55,6 +55,7 @@ interface ResearchContentProps {
   onDismissMemorySuggestion?: (suggestionId: string) => void;
   onDismissAllMemorySuggestions?: () => void;
   savingMemorySuggestionId?: string | null;
+  memorySuggestionNotice?: string | null;
   pendingMemoryBridge?: ResearchClassificationResponse | null;
   onUseMemoryBridge?: (selectedMemories: MemorySearchResult[]) => void;
   onSkipMemoryBridge?: () => void;
@@ -95,6 +96,7 @@ export default function ResearchContent({
   onDismissMemorySuggestion,
   onDismissAllMemorySuggestions,
   savingMemorySuggestionId = null,
+  memorySuggestionNotice = null,
   pendingMemoryBridge = null,
   onUseMemoryBridge,
   onSkipMemoryBridge,
@@ -135,6 +137,15 @@ export default function ResearchContent({
             loading={loading}
           />
         </div>
+
+        {memorySuggestionNotice && memorySuggestions.length === 0 && (
+          <div className="rounded-2xl border border-amber-300/25 bg-amber-300/8 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-200">
+              Long-Term Memory Notice
+            </p>
+            <p className="mt-2 text-sm leading-6 text-amber-50/90">{memorySuggestionNotice}</p>
+          </div>
+        )}
 
         <div className="pt-1 sm:pt-2" ref={chatContainerRef}></div>
         <div ref={finalBottomRef} />

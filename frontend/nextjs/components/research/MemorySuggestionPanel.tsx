@@ -34,7 +34,9 @@ export default function MemorySuggestionPanel({
   onClose,
 }: MemorySuggestionPanelProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, { title: string; content: string }>>({});
+  const [drafts, setDrafts] = useState<
+    Record<string, { title: string; core_claim: string; content: string }>
+  >({});
 
   useEffect(() => {
     setDrafts((prev) => {
@@ -43,6 +45,7 @@ export default function MemorySuggestionPanel({
         if (!next[suggestion.id]) {
           next[suggestion.id] = {
             title: suggestion.title,
+            core_claim: suggestion.core_claim ?? "",
             content: suggestion.content,
           };
         }
@@ -56,11 +59,16 @@ export default function MemorySuggestionPanel({
     });
   }, [suggestions]);
 
-  const updateDraft = (suggestionId: string, field: "title" | "content", value: string) => {
+  const updateDraft = (
+    suggestionId: string,
+    field: "title" | "core_claim" | "content",
+    value: string
+  ) => {
     setDrafts((prev) => ({
       ...prev,
       [suggestionId]: {
         title: prev[suggestionId]?.title ?? "",
+        core_claim: prev[suggestionId]?.core_claim ?? "",
         content: prev[suggestionId]?.content ?? "",
         [field]: value,
       },
@@ -103,6 +111,7 @@ export default function MemorySuggestionPanel({
           const isEditing = editingId === suggestion.id;
           const draft = drafts[suggestion.id] ?? {
             title: suggestion.title,
+            core_claim: suggestion.core_claim ?? "",
             content: suggestion.content,
           };
 
@@ -130,13 +139,39 @@ export default function MemorySuggestionPanel({
               </div>
 
               {isEditing ? (
-                <textarea
-                  value={draft.content}
-                  onChange={(event) => updateDraft(suggestion.id, "content", event.target.value)}
-                  className="mt-3 min-h-[120px] w-full rounded-2xl border border-[var(--border)] bg-black/10 px-3 py-3 text-sm leading-6 text-ink outline-none focus:border-primary"
-                />
+                <div className="mt-3 space-y-3">
+                  {suggestion.core_claim !== undefined && (
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-primary/80">
+                        核心结论候选
+                      </p>
+                      <textarea
+                        value={draft.core_claim}
+                        onChange={(event) =>
+                          updateDraft(suggestion.id, "core_claim", event.target.value)
+                        }
+                        className="mt-2 min-h-[88px] w-full rounded-2xl border border-[var(--border)] bg-black/10 px-3 py-3 text-sm leading-6 text-ink outline-none focus:border-primary"
+                      />
+                    </div>
+                  )}
+                  <textarea
+                    value={draft.content}
+                    onChange={(event) => updateDraft(suggestion.id, "content", event.target.value)}
+                    className="min-h-[120px] w-full rounded-2xl border border-[var(--border)] bg-black/10 px-3 py-3 text-sm leading-6 text-ink outline-none focus:border-primary"
+                  />
+                </div>
               ) : (
-                <p className="mt-3 text-sm leading-6 text-ink">{draft.content}</p>
+                <div className="mt-3 space-y-3">
+                  {suggestion.core_claim && (
+                    <div className="rounded-2xl border border-primary/20 bg-primary/8 px-3 py-3">
+                      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-primary/80">
+                        核心结论候选
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-ink">{draft.core_claim}</p>
+                    </div>
+                  )}
+                  <p className="text-sm leading-6 text-ink">{draft.content}</p>
+                </div>
               )}
 
               <p className="mt-3 text-xs leading-5 text-ink-secondary">
@@ -156,6 +191,10 @@ export default function MemorySuggestionPanel({
                     onSave({
                       ...suggestion,
                       title: draft.title.trim() || suggestion.title,
+                      core_claim:
+                        suggestion.core_claim !== undefined
+                          ? draft.core_claim.trim() || suggestion.core_claim
+                          : suggestion.core_claim,
                       content: draft.content.trim() || suggestion.content,
                     })
                   }

@@ -49,14 +49,149 @@ function formatDate(value?: string) {
   });
 }
 
+function isPrimaryMemory(entry: MemorySearchResult) {
+  return (
+    (entry.item.type === "research_knowledge" || entry.item.type === "report_index") &&
+    !!entry.item.core_claim
+  );
+}
+
+function isAuxiliaryMemory(entry: MemorySearchResult) {
+  return entry.item.type === "saved_context" || entry.item.type === "research_interest";
+}
+
+function pickDefaultSelections(entries: MemorySearchResult[]) {
+  const recommended = entries
+    .filter(
+      (entry) =>
+        entry.item.type === "research_knowledge" &&
+        entry.score >= 0.35 &&
+        entry.item.confidence !== "low"
+    )
+    .slice(0, 3);
+
+  if (recommended.length > 0) {
+    return recommended.map((entry) => entry.item.id);
+  }
+
+  return entries
+    .filter((entry) => entry.score >= 0.25)
+    .slice(0, 2)
+    .map((entry) => entry.item.id);
+}
+
+function MemoryCard({
+  entry,
+  checked,
+  expanded,
+  selectable = true,
+  fallback = false,
+  onToggle,
+  onToggleExpanded,
+}: {
+  entry: MemorySearchResult;
+  checked: boolean;
+  expanded: boolean;
+  selectable?: boolean;
+  fallback?: boolean;
+  onToggle: () => void;
+  onToggleExpanded: () => void;
+}) {
+  const staleness = entry.findings[0]?.staleness;
+  const headline = entry.item.core_claim || entry.item.summary;
+
+  return (
+    <article
+      className={`rounded-2xl border p-4 transition ${
+        checked
+          ? "border-primary/50 bg-primary/10 shadow-[0_0_0_1px_rgba(99,102,241,0.18)]"
+          : "border-[var(--border)] bg-white/[0.04]"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={!selectable}
+          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs ${
+            checked
+              ? "border-primary bg-primary text-white"
+              : "border-[var(--border)] bg-black/10 text-transparent"
+          } ${!selectable ? "cursor-not-allowed opacity-60" : ""}`}
+        >
+          ✓
+        </button>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="text-sm font-semibold text-ink">{entry.item.title}</h4>
+                {fallback && (
+                  <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-0.5 text-[11px] text-amber-200">
+                    临时候选
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-ink">{headline}</p>
+              <p className="mt-2 text-xs text-ink-secondary">
+                来源报告：{entry.item.source.report_id || "unknown"} | 相关度：{entry.score.toFixed(2)}
+              </p>
+              <p className="mt-1 text-xs text-ink-secondary">
+                创建时间：{formatDate(entry.item.created_at)} | 可信度：
+                {confidenceLabelMap[entry.item.confidence]}
+                {staleness ? ` | 时效性：${stalenessLabelMap[staleness]}` : ""}
+              </p>
+            </div>
+
+            <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[11px] text-ink-secondary">
+              {entry.item.type}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onToggleExpanded}
+              className="rounded-full border border-[var(--border)] px-3 py-1 text-[11px] text-ink-secondary transition hover:border-primary/50 hover:text-ink"
+            >
+              {expanded ? "收起详情" : "查看详情"}
+            </button>
+          </div>
+
+          {expanded && (
+            <div className="mt-3 rounded-2xl bg-black/10 px-4 py-3 text-sm leading-6 text-ink-secondary">
+              <p>{entry.item.summary}</p>
+              {!!entry.findings[0]?.evidence_summary && (
+                <p className="mt-2 border-t border-white/10 pt-2">
+                  证据摘要：{entry.findings[0].evidence_summary}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function ResearchMemoryBridge({
   classification,
   onUseMemory,
   onSkipMemory,
 }: ResearchMemoryBridgeProps) {
   const [mounted, setMounted] = useState(false);
-  const related = classification.related_memories || [];
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [showAuxiliary, setShowAuxiliary] = useState(false);
+  const related = classification.related_memories || [];
+
+  const primaryMemories = useMemo(() => related.filter(isPrimaryMemory), [related]);
+  const auxiliaryMemories = useMemo(() => related.filter(isAuxiliaryMemory), [related]);
+  const fallbackMemories = useMemo(
+    () => related.filter((entry) => !isPrimaryMemory(entry) && !isAuxiliaryMemory(entry)),
+    [related]
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -68,8 +203,8 @@ export default function ResearchMemoryBridge({
   }, []);
 
   useEffect(() => {
-    setSelectedIds(related.slice(0, 3).map((entry) => entry.item.id));
-  }, [related]);
+    setSelectedIds(pickDefaultSelections(primaryMemories));
+  }, [primaryMemories]);
 
   const selectedMemories = useMemo(
     () => related.filter((entry) => selectedIds.includes(entry.item.id)),
@@ -78,6 +213,14 @@ export default function ResearchMemoryBridge({
 
   const toggleSelection = (memoryId: string) => {
     setSelectedIds((current) =>
+      current.includes(memoryId)
+        ? current.filter((id) => id !== memoryId)
+        : [...current, memoryId]
+    );
+  };
+
+  const toggleExpanded = (memoryId: string) => {
+    setExpandedIds((current) =>
       current.includes(memoryId)
         ? current.filter((id) => id !== memoryId)
         : [...current, memoryId]
@@ -102,7 +245,7 @@ export default function ResearchMemoryBridge({
           initial={{ opacity: 0, y: 18, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 18, scale: 0.98 }}
-          className="flex max-h-[88vh] w-[min(860px,100%)] flex-col overflow-hidden rounded-[28px] border border-primary/30 bg-[var(--surface)] shadow-2xl"
+          className="flex max-h-[88vh] w-[min(920px,100%)] flex-col overflow-hidden rounded-[28px] border border-primary/30 bg-[var(--surface)] shadow-2xl"
         >
           <div className="border-b border-[var(--border)] px-5 py-5 sm:px-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -117,87 +260,121 @@ export default function ResearchMemoryBridge({
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-ink-secondary">
               <span className="rounded-full border border-[var(--border)] px-3 py-1">
-                已选 {selectedMemories.length} 条
+                主承接结论 {primaryMemories.length}
               </span>
-              <button
-                type="button"
-                onClick={() => setSelectedIds(related.map((entry) => entry.item.id))}
-                className="rounded-full border border-[var(--border)] px-3 py-1 transition hover:border-primary/50 hover:text-ink"
-              >
-                全选
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedIds([])}
-                className="rounded-full border border-[var(--border)] px-3 py-1 transition hover:border-primary/50 hover:text-ink"
-              >
-                清空
-              </button>
+              <span className="rounded-full border border-[var(--border)] px-3 py-1">
+                辅助背景 {auxiliaryMemories.length}
+              </span>
+              {!!fallbackMemories.length && (
+                <span className="rounded-full border border-amber-300/30 px-3 py-1 text-amber-200">
+                  临时候选 {fallbackMemories.length}
+                </span>
+              )}
+              <span className="rounded-full border border-[var(--border)] px-3 py-1">
+                已选 {selectedMemories.length}
+              </span>
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5 sm:px-6">
-            {related.length ? (
-              related.slice(0, 5).map((entry) => {
-                const checked = selectedIds.includes(entry.item.id);
-                return (
-                  <button
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+            {!!primaryMemories.length && (
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-ink">主承接结论</h4>
+                    <p className="text-xs text-ink-secondary">
+                      默认展示核心结论，只会带入你明确选中的条目。
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIds(primaryMemories.map((entry) => entry.item.id))}
+                      className="rounded-full border border-[var(--border)] px-3 py-1 text-[11px] text-ink-secondary transition hover:border-primary/50 hover:text-ink"
+                    >
+                      全选主结论
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIds([])}
+                      className="rounded-full border border-[var(--border)] px-3 py-1 text-[11px] text-ink-secondary transition hover:border-primary/50 hover:text-ink"
+                    >
+                      清空选择
+                    </button>
+                  </div>
+                </div>
+
+                {primaryMemories.map((entry) => (
+                  <MemoryCard
                     key={entry.item.id}
-                    type="button"
-                    onClick={() => toggleSelection(entry.item.id)}
-                    className={`block w-full rounded-2xl border p-4 text-left transition ${
-                      checked
-                        ? "border-primary/50 bg-primary/10 shadow-[0_0_0_1px_rgba(99,102,241,0.18)]"
-                        : "border-[var(--border)] bg-white/[0.04] hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs ${
-                          checked
-                            ? "border-primary bg-primary text-white"
-                            : "border-[var(--border)] bg-black/10 text-transparent"
-                        }`}
-                      >
-                        ✓
-                      </span>
+                    entry={entry}
+                    checked={selectedIds.includes(entry.item.id)}
+                    expanded={expandedIds.includes(entry.item.id)}
+                    onToggle={() => toggleSelection(entry.item.id)}
+                    onToggleExpanded={() => toggleExpanded(entry.item.id)}
+                  />
+                ))}
+              </section>
+            )}
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-sm font-semibold text-ink">{entry.item.title}</h4>
-                            <p className="mt-1 text-xs text-ink-secondary">
-                              来源报告：{entry.item.source.report_id || "unknown"} | 相关度：
-                              {entry.score.toFixed(2)}
-                            </p>
-                            <p className="mt-1 text-xs text-ink-secondary">
-                              创建时间：{formatDate(entry.item.created_at)} | 可信度：
-                              {confidenceLabelMap[entry.item.confidence]}
-                            </p>
-                            {!!entry.findings[0] && (
-                              <p className="mt-1 text-xs text-ink-secondary">
-                                时效性：{stalenessLabelMap[entry.findings[0].staleness]}
-                              </p>
-                            )}
-                          </div>
+            {!!auxiliaryMemories.length && (
+              <section className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAuxiliary((current) => !current)}
+                  className="flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-white/[0.03] px-4 py-3 text-left"
+                >
+                  <div>
+                    <h4 className="text-sm font-semibold text-ink">辅助背景</h4>
+                    <p className="text-xs text-ink-secondary">
+                      `saved_context` / `research_interest` 默认不勾选，也不会和主结论混排。
+                    </p>
+                  </div>
+                  <span className="text-xs text-ink-secondary">
+                    {showAuxiliary ? "收起" : "展开"}
+                  </span>
+                </button>
 
-                          <span className="rounded-full border border-[var(--border)] px-2 py-1 text-[11px] text-ink-secondary">
-                            {entry.item.type}
-                          </span>
-                        </div>
+                {showAuxiliary &&
+                  auxiliaryMemories.map((entry) => (
+                    <MemoryCard
+                      key={entry.item.id}
+                      entry={entry}
+                      checked={selectedIds.includes(entry.item.id)}
+                      expanded={expandedIds.includes(entry.item.id)}
+                      onToggle={() => toggleSelection(entry.item.id)}
+                      onToggleExpanded={() => toggleExpanded(entry.item.id)}
+                    />
+                  ))}
+              </section>
+            )}
 
-                        <p className="mt-3 line-clamp-4 text-sm leading-6 text-ink">
-                          {entry.item.summary}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            ) : (
+            {!!fallbackMemories.length && (
+              <section className="space-y-3">
+                <div>
+                  <h4 className="text-sm font-semibold text-ink">临时候选</h4>
+                  <p className="text-xs text-ink-secondary">
+                    这些历史数据缺少正式 `core_claim`，可以参考，但优先级低于正式结构化结论。
+                  </p>
+                </div>
+                {fallbackMemories.map((entry) => (
+                  <MemoryCard
+                    key={entry.item.id}
+                    entry={entry}
+                    checked={selectedIds.includes(entry.item.id)}
+                    expanded={expandedIds.includes(entry.item.id)}
+                    fallback
+                    onToggle={() => toggleSelection(entry.item.id)}
+                    onToggleExpanded={() => toggleExpanded(entry.item.id)}
+                  />
+                ))}
+              </section>
+            )}
+
+            {!related.length && (
               <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center">
                 <p className="text-sm text-ink-secondary">
-                  没有可展示的历史结论，但系统判定当前问题与旧研究存在关联。
+                  没有可展示的历史结论，但系统判断当前问题与旧研究存在关联。
                 </p>
               </div>
             )}
@@ -205,7 +382,7 @@ export default function ResearchMemoryBridge({
 
           <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] bg-[var(--surface)] px-5 py-4 sm:px-6">
             <p className="text-xs text-ink-secondary">
-              只会把你选中的结论作为“历史研究上下文”带入新一轮研究。
+              只会把你选中的结论作为历史研究上下文带入新一轮研究。
             </p>
 
             <div className="flex flex-wrap justify-end gap-3">

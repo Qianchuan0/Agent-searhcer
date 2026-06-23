@@ -4,6 +4,35 @@ import { markdownToHtml } from "../../helpers/markdownHelper";
 import "../../styles/markdown.css";
 import { ReportMemoryResponse, ResearchFinding } from "../../types/data";
 
+const confidenceLabels = {
+  low: "低",
+  medium: "中",
+  high: "高",
+} as const;
+
+const stalenessLabels = {
+  fresh: "较新",
+  possibly_stale: "可能过期",
+  stale: "已过期",
+} as const;
+
+function formatDate(value?: string) {
+  if (!value) {
+    return "未知时间";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
 function HistoricalReferences({ researchId }: { researchId?: string }) {
   const [reportMemory, setReportMemory] = useState<ReportMemoryResponse | null>(null);
 
@@ -34,6 +63,11 @@ function HistoricalReferences({ researchId }: { researchId?: string }) {
     return Array.isArray(raw) ? (raw as ResearchFinding[]) : [];
   }, [reportMemory]);
 
+  const adoptedMemoryMap = useMemo(() => {
+    const entries = reportMemory?.memories || [];
+    return new Map(entries.map((item) => [item.id, item]));
+  }, [reportMemory]);
+
   if (!reportMemory?.findings?.length && !newFindings.length) {
     return null;
   }
@@ -46,25 +80,35 @@ function HistoricalReferences({ researchId }: { researchId?: string }) {
             历史研究引用
           </p>
           <p className="mt-2 text-sm leading-6 text-white/85">
-            这里展示的是本次研究开始前，你明确选择承接的旧结论。报告正文应把这些内容视为历史上下文，而不是本次新发现。
+            这里展示的是本次研究开始前，你明确选择承接的旧结论。它们是历史上下文，不是本次新发现。
           </p>
 
           <div className="mt-4 space-y-3">
-            {reportMemory.findings.map((finding) => (
-              <div
-                key={finding.id}
-                className="rounded-xl border border-white/10 bg-black/15 px-4 py-3"
-              >
-                <p className="text-sm font-medium text-white">{finding.claim}</p>
-                <p className="mt-1 text-xs text-ink-secondary">
-                  来源报告：{finding.source_report_id} | 可信度：{finding.confidence} | 时效性：
-                  {finding.staleness}
-                </p>
-                <p className="mt-2 text-xs leading-5 text-ink-secondary">
-                  {finding.evidence_summary}
-                </p>
-              </div>
-            ))}
+            {reportMemory.findings.map((finding) => {
+              const memory = adoptedMemoryMap.get(finding.memory_id);
+              return (
+                <div
+                  key={finding.id}
+                  className="rounded-xl border border-white/10 bg-black/15 px-4 py-3"
+                >
+                  <p className="text-sm font-medium text-white">
+                    {memory?.core_claim || finding.claim}
+                  </p>
+                  {!!memory?.title && (
+                    <p className="mt-1 text-xs text-ink-secondary">主题：{memory.title}</p>
+                  )}
+                  <p className="mt-1 text-xs text-ink-secondary">
+                    来源报告：{finding.source_report_id} | 创建时间：
+                    {formatDate(memory?.created_at)} | 可信度：
+                    {confidenceLabels[finding.confidence]} | 时效性：
+                    {stalenessLabels[finding.staleness]}
+                  </p>
+                  <p className="mt-2 text-xs leading-5 text-ink-secondary">
+                    {memory?.summary || finding.evidence_summary}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -86,8 +130,8 @@ function HistoricalReferences({ researchId }: { researchId?: string }) {
               >
                 <p className="text-sm font-medium text-white">{finding.claim}</p>
                 <p className="mt-1 text-xs text-ink-secondary">
-                  当前报告：{researchId} | 可信度：{finding.confidence} | 时效性：
-                  {finding.staleness}
+                  当前报告：{researchId} | 可信度：{confidenceLabels[finding.confidence]} |
+                  时效性：{stalenessLabels[finding.staleness]}
                 </p>
                 <p className="mt-2 text-xs leading-5 text-ink-secondary">
                   {finding.evidence_summary}

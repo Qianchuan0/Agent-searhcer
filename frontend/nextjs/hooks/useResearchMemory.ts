@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import {
   MemoryCreateRequest,
   MemoryItem,
@@ -13,7 +14,7 @@ import {
   ResearchClassificationResponse,
 } from "../types/data";
 
-const MEMORY_SETTINGS_STORAGE_KEY = "gptr-memory-settings";
+const MEMORY_SETTINGS_STORAGE_KEY = "gptr-memory-settings-v2";
 
 async function readErrorMessage(response: Response, fallback: string) {
   try {
@@ -38,48 +39,27 @@ interface ResearchMemoryState {
   setInitialized: (initialized: boolean) => void;
 }
 
-const readCachedSettings = (): MemorySettings | null => {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = localStorage.getItem(MEMORY_SETTINGS_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as MemorySettings) : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeCachedSettings = (settings: MemorySettings | null) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    if (!settings) {
-      localStorage.removeItem(MEMORY_SETTINGS_STORAGE_KEY);
-      return;
-    }
-    localStorage.setItem(MEMORY_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    // Ignore local cache failures and keep network state authoritative.
-  }
-};
-
-const useResearchMemoryStore = create<ResearchMemoryState>((set) => ({
-  settings: readCachedSettings(),
-  items: [],
-  loading: false,
-  initialized: false,
-  setSettings: (settings) => {
-    writeCachedSettings(settings);
-    set({ settings });
-  },
-  setItems: (items) => set({ items }),
-  setLoading: (loading) => set({ loading }),
-  setInitialized: (initialized) => set({ initialized }),
-}));
+// settings 作为用户级偏好，以 localStorage 为权威源（persist 持久化）。
+// 后端只在本地为空（首次使用）时作为默认值引导，避免被后端状态反复覆盖。
+const useResearchMemoryStore = create<ResearchMemoryState>()(
+  persist(
+    (set) => ({
+      settings: null,
+      items: [],
+      loading: false,
+      initialized: false,
+      setSettings: (settings) => set({ settings }),
+      setItems: (items) => set({ items }),
+      setLoading: (loading) => set({ loading }),
+      setInitialized: (initialized) => set({ initialized }),
+    }),
+    {
+      name: MEMORY_SETTINGS_STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ settings: s.settings }) as ResearchMemoryState,
+    },
+  ),
+);
 
 export const useResearchMemory = () => {
   const {

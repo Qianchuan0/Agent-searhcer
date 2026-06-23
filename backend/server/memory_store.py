@@ -4,6 +4,7 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any, Dict
+from datetime import UTC, datetime
 
 from server.memory_schemas import MemorySettings
 
@@ -26,7 +27,9 @@ class MemoryStore:
                 payload.update(data)
                 return payload
         except Exception:
+            self._backup_corrupted_file()
             return self._default_payload()
+        self._backup_corrupted_file()
         return self._default_payload()
 
     async def _write_unlocked(self, data: Dict[str, Any]) -> None:
@@ -40,6 +43,17 @@ class MemoryStore:
             "settings": MemorySettings(enabled=False, updated_at="1970-01-01T00:00:00+00:00").model_dump(mode="json"),
             "items": {},
         }
+
+    def _backup_corrupted_file(self) -> None:
+        if not self._path.exists():
+            return
+        timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+        backup_path = self._path.with_name(f"{self._path.name}.corrupt-{timestamp}")
+        try:
+            self._path.replace(backup_path)
+        except Exception:
+            # If backup fails, keep serving the default payload so research can continue.
+            return
 
     async def read_all(self) -> Dict[str, Any]:
         async with self._lock:

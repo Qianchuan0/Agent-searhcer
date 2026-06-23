@@ -339,6 +339,39 @@ class MemorySystemTests(unittest.TestCase):
                 ],
             )
 
+    def test_chinese_tokenization_recall(self):
+        """分词层修复：jieba + tags 注入让 '赛博朋克' 整词命中，
+        使 '发展历程' 这类原 title 里没有的近义中文查询也能召回。
+        无 API key 环境下纯词法路径即可通过。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            service = self.create_service(Path(tmp))
+            self.enable_memory(service)
+
+            run(
+                service.create_item(
+                    MemoryCreateRequest(
+                        type="research_knowledge",
+                        title="赛博朋克的发展",
+                        core_claim="赛博朋克是科幻文学的重要流派，核心在于高科技低生活。",
+                        content="赛博朋克（Cyberpunk）是科幻文学流派，起源于 20 世纪 80 年代。",
+                        summary="赛博朋克文学发展研究报告",
+                        tags=["赛博朋克", "cyberpunk", "科幻文学"],
+                        source=MemorySource(
+                            kind="report",
+                            report_id="report-cyberpunk",
+                            created_from="memory_suggestion",
+                        ),
+                        confidence="high",
+                    )
+                )
+            )
+
+            response = run(service.search(MemorySearchRequest(query="赛博朋克的发展历程", limit=5)))
+
+            self.assertGreater(len(response.results), 0)
+            self.assertEqual(response.results[0].item.title, "赛博朋克的发展")
+            self.assertIn("赛博朋克", response.results[0].matched_terms)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
-from typing import Dict, Iterable, List, Sequence
+from typing import Dict, Iterable, List, Optional, Sequence
 from uuid import uuid4
+
+import jieba
 
 from server.memory_schemas import (
     MemoryCreateRequest,
@@ -23,14 +25,22 @@ from server.memory_schemas import (
     ResearchClassificationResponse,
     ResearchFinding,
 )
+from server.memory_embeddings import MemoryEmbeddings
 from server.memory_store import MemoryStore
 from server.report_store import ReportStore
+
+# 词法为 0 时，cosine 达到此阈值才走语义召回
+SEMANTIC_RECALL_THRESHOLD = 0.35
+# 纯语义召回条目的保守词法量纲分（让前端 0.25 低阈值刚好放行）
+SEMANTIC_RECALL_SCORE = 0.27
 
 
 class MemoryService:
     def __init__(self, store: MemoryStore, report_store: ReportStore):
         self._store = store
         self._report_store = report_store
+        self._embedder_cache: Optional[MemoryEmbeddings] = None
+        self._jieba_dict_loaded = False
 
     async def get_settings(self) -> MemorySettings:
         payload = await self._store.read_all()
@@ -179,34 +189,81 @@ class MemoryService:
             return MemorySearchResponse(results=[])
 
         items = await self.list_items(status="active")
+        if not self._jieba_dict_loaded:
+            self._inject_tags_to_jieba(items)
+            self._jieba_dict_loaded = True
         tokens = self._tokenize(request.query)
-        ranked: List[MemorySearchResult] = []
+
+        embedder = self._get_embedder()
+        query_vector: Optional[List[float]] = None
+        item_vectors: Dict[str, List[float]] = {}
+        if embedder is not None and embedder.available:
+            embedder.ensure_warm(
+                (item.id, self._item_embed_text(item)) for item in items
+            )
+            if embedder.available:
+                query_vector = embedder.embed_query(request.query)
+                if query_vector is not None:
+                    for item in items:
+                        entry = embedder.get(item.id)
+                        if entry is not None:
+                            item_vectors[item.id] = entry[1]
+
+        candidates: List[tuple[MemoryItem, List[str], float, float]] = []
         for item in items:
-            score, matched_terms = self._score_item(item, tokens)
-            if score <= 0:
+            lexical, matched_terms, semantic = self._score_item(
+                item,
+                tokens,
+                item_vector=item_vectors.get(item.id),
+                query_vector=query_vector,
+            )
+            has_lexical = bool(matched_terms)
+            if not has_lexical and semantic < SEMANTIC_RECALL_THRESHOLD:
                 continue
+            final_score = (
+                lexical
+                if has_lexical
+                else min(
+                    0.6,
+                    SEMANTIC_RECALL_SCORE + (semantic - SEMANTIC_RECALL_THRESHOLD) * 0.5,
+                )
+            )
+            candidates.append((item, matched_terms, semantic, final_score))
+
+        candidates.sort(
+            key=lambda c: (
+                self._bridge_bucket(c[0]),
+                -c[3],
+                -c[2],
+                -1.0 if c[0].core_claim else 0.0,
+                -c[0].created_at.timestamp(),
+            )
+        )
+        top = candidates[: max(1, min(request.limit, 20))]
+
+        ranked: List[MemorySearchResult] = []
+        for item, matched_terms, _semantic, final_score in top:
             finding = self._build_finding(item)
             ranked.append(
                 MemorySearchResult(
                     item=item,
-                    score=score,
+                    score=final_score,
                     matched_terms=matched_terms,
                     findings=[finding] if finding else [],
                 )
             )
 
-        ranked.sort(key=self._search_sort_key)
-        top_results = ranked[: max(1, min(request.limit, 20))]
-
-        if top_results:
+        if ranked:
             payload = await self._store.read_all()
-            for result in top_results:
+            for result in ranked:
                 refreshed = result.item.model_copy(update={"last_used_at": self._now()})
                 payload["items"][refreshed.id] = refreshed.model_dump(mode="json")
                 result.item = refreshed
             await self._store.write_all(payload)
+            if embedder is not None:
+                embedder.flush()
 
-        return MemorySearchResponse(results=top_results)
+        return MemorySearchResponse(results=ranked)
 
     async def generate_suggestions(self, request: MemorySuggestionRequest) -> MemorySuggestionsResponse:
         settings = await self.get_settings()
@@ -422,30 +479,60 @@ class MemoryService:
             staleness="possibly_stale" if item.type == "report_index" else "fresh",
         )
 
-    def _score_item(self, item: MemoryItem, query_tokens: Sequence[str]) -> tuple[float, List[str]]:
+    def _get_embedder(self) -> Optional[MemoryEmbeddings]:
+        """懒加载 embedding 封装。构造或调用失败后返回 None，触发纯词法降级。"""
+        cache = self._embedder_cache
+        if cache is not None:
+            return cache if cache.available else None
+        try:
+            from gpt_researcher.config.config import Config
+            from gpt_researcher.memory.embeddings import Memory
+
+            cfg = Config()
+            if not getattr(cfg, "embedding_provider", None) or not getattr(cfg, "embedding_model", None):
+                return None
+            langchain_embeddings = Memory(
+                cfg.embedding_provider,
+                cfg.embedding_model,
+                **(getattr(cfg, "embedding_kwargs", None) or {}),
+            ).get_embeddings()
+            cache_path = self._store.path.parent / "embeddings.pkl"
+            self._embedder_cache = MemoryEmbeddings(
+                cache_path=cache_path,
+                embedder=langchain_embeddings,
+                model_name=cfg.embedding_model,
+            )
+            return self._embedder_cache
+        except Exception:
+            self._embedder_cache = None
+            return None
+
+    def _item_embed_text(self, item: MemoryItem) -> str:
+        parts = [item.title, item.core_claim or "", item.summary]
+        return " ".join(p.strip() for p in parts if p and p.strip())
+
+    def _score_item(
+        self,
+        item: MemoryItem,
+        query_tokens: Sequence[str],
+        item_vector: Optional[List[float]] = None,
+        query_vector: Optional[List[float]] = None,
+    ) -> tuple[float, List[str], float]:
         haystack = " ".join(
             [item.title, item.core_claim or "", item.summary, item.content, " ".join(item.tags)]
         ).lower()
         matched_terms = [token for token in query_tokens if token and token in haystack]
-        if not matched_terms:
-            return 0.0, []
 
         unique_query_tokens = len(set(query_tokens)) or 1
-        lexical_score = len(set(matched_terms)) / unique_query_tokens
+        lexical_score = len(set(matched_terms)) / unique_query_tokens if matched_terms else 0.0
         type_bonus = 0.08 if item.type == "research_knowledge" else 0.05 if item.type == "report_index" else 0.0
         bridge_bonus = 0.04 if self._bridge_bucket(item) == 0 else 0.0
         fallback_penalty = -0.05 if self._bridge_bucket(item) == 2 else 0.0
         confidence_bonus = {"low": 0.0, "medium": 0.03, "high": 0.06}[item.confidence]
-        return min(1.0, max(0.0, lexical_score + type_bonus + bridge_bonus + fallback_penalty + confidence_bonus)), sorted(set(matched_terms))
+        lexical_total = min(1.0, max(0.0, lexical_score + type_bonus + bridge_bonus + fallback_penalty + confidence_bonus))
 
-    def _search_sort_key(self, entry: MemorySearchResult) -> tuple[float, int, float, float]:
-        item = entry.item
-        return (
-            self._bridge_bucket(item),
-            -entry.score,
-            -1.0 if item.core_claim else 0.0,
-            -item.created_at.timestamp(),
-        )
+        semantic = MemoryEmbeddings.cosine(query_vector, item_vector) if query_vector and item_vector else 0.0
+        return lexical_total, sorted(set(matched_terms)), semantic
 
     def _bridge_bucket(self, item: MemoryItem) -> int:
         if item.type in {"research_knowledge", "report_index"} and item.core_claim:
@@ -456,9 +543,34 @@ class MemoryService:
             return 2
         return 3
 
+    def _inject_tags_to_jieba(self, items: Iterable[MemoryItem]) -> None:
+        """把记忆 tags 注入 jieba 词典，避免术语被切散（如'赛博朋克'）。"""
+        for item in items:
+            for tag in item.tags:
+                cleaned = tag.strip()
+                if len(cleaned) >= 2:
+                    try:
+                        jieba.add_word(cleaned)
+                    except Exception:
+                        pass
+
     def _tokenize(self, text: str) -> List[str]:
-        normalized = re.sub(r"[^\w\u4e00-\u9fff]+", " ", text.lower())
-        return [token for token in normalized.split() if len(token) >= 2]
+        if not text:
+            return []
+        try:
+            raw_tokens = jieba.lcut(text.lower())
+        except Exception:
+            normalized = re.sub(r"[^\w\u4e00-\u9fff]+", " ", text.lower())
+            raw_tokens = normalized.split()
+        tokens: List[str] = []
+        for tok in raw_tokens:
+            tok = tok.strip()
+            if not tok or len(tok) < 2:
+                continue
+            if not re.search(r"[\w\u4e00-\u9fff]", tok):
+                continue
+            tokens.append(tok)
+        return tokens
 
     def _extract_tags(self, texts: Iterable[str]) -> List[str]:
         tag_candidates: List[str] = []

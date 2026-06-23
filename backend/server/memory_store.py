@@ -14,6 +14,10 @@ class MemoryStore:
         self._path = path
         self._lock = asyncio.Lock()
 
+    @property
+    def path(self) -> Path:
+        return self._path
+
     async def _ensure_parent_dir(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
 

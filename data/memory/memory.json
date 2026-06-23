@@ -288,7 +288,7 @@
       "status": "active",
       "created_at": "2026-06-23T01:35:25.528168Z",
       "updated_at": "2026-06-23T01:35:25.528168Z",
-      "last_used_at": null,
+      "last_used_at": "2026-06-23T03:54:12.902170Z",
       "expires_at": null,
       "embedding_id": null
     },
@@ -320,7 +320,7 @@
       "status": "active",
       "created_at": "2026-06-23T01:36:40.861212Z",
       "updated_at": "2026-06-23T01:36:40.861212Z",
-      "last_used_at": null,
+      "last_used_at": "2026-06-23T03:18:52.050008Z",
       "expires_at": null,
       "embedding_id": null
     },
@@ -384,7 +384,7 @@
       "status": "active",
       "created_at": "2026-06-23T01:51:32.914058Z",
       "updated_at": "2026-06-23T01:51:32.914058Z",
-      "last_used_at": "2026-06-23T01:54:07.349356Z",
+      "last_used_at": "2026-06-23T03:54:12.902158Z",
       "expires_at": null,
       "embedding_id": null
     },
@@ -416,7 +416,7 @@
       "status": "active",
       "created_at": "2026-06-23T01:53:26.661063Z",
       "updated_at": "2026-06-23T01:53:26.661063Z",
-      "last_used_at": "2026-06-23T01:54:07.349312Z",
+      "last_used_at": "2026-06-23T03:54:12.902181Z",
       "expires_at": null,
       "embedding_id": null
     },
@@ -480,7 +480,7 @@
       "status": "active",
       "created_at": "2026-06-23T02:05:41.940620Z",
       "updated_at": "2026-06-23T02:05:41.940620Z",
-      "last_used_at": null,
+      "last_used_at": "2026-06-23T03:54:12.902141Z",
       "expires_at": null,
       "embedding_id": null
     },
@@ -512,7 +512,7 @@
       "status": "active",
       "created_at": "2026-06-23T02:16:14.799094Z",
       "updated_at": "2026-06-23T02:16:14.799094Z",
-      "last_used_at": null,
+      "last_used_at": "2026-06-23T03:54:12.902070Z",
       "expires_at": null,
       "embedding_id": null
     },

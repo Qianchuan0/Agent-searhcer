@@ -1,7 +1,7 @@
 {
   "settings": {
     "enabled": true,
-    "updated_at": "2026-06-23T01:50:55.266619Z"
+    "updated_at": "2026-06-23T02:16:59.389374Z"
   },
   "items": {
     "memory_905a943af74f4bb9899b575523e8bb12": {
@@ -29,9 +29,9 @@
         "created_from": "report_index"
       },
       "confidence": "high",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T08:14:22.060220Z",
-      "updated_at": "2026-06-22T08:14:22.060220Z",
+      "updated_at": "2026-06-23T02:15:32.005409Z",
       "last_used_at": "2026-06-23T01:53:10.523867Z",
       "expires_at": null,
       "embedding_id": null
@@ -41,6 +41,7 @@
       "scope": "local",
       "type": "report_index",
       "title": "什么是contextEngineer",
+      "core_claim": null,
       "content": "Question: 什么是contextEngineer\n\nSummary:\n# 上下文工程：从Prompt到动态系统级管理的范式革命",
       "summary": "# 上下文工程：从Prompt到动态系统级管理的范式革命 ## 综合研究报告 --- ## 摘要 上下文工程（Context Engineering）是2025至2026年间人工智能领域最具变革性的工程范式之一。它标志着AI系统设计从“如何写指令”向“如何管理信息环境”的根本性转变。本报告基于多层次研究资料的综合分析，系统梳理了上下文工程的定义、发展时...",
       "tags": [
@@ -60,9 +61,9 @@
         "created_from": "report_index"
       },
       "confidence": "high",
-      "status": "disabled",
+      "status": "deleted",
       "created_at": "2026-06-22T09:36:25.488450Z",
-      "updated_at": "2026-06-22T09:52:16.747292Z",
+      "updated_at": "2026-06-23T02:15:33.106204Z",
       "last_used_at": null,
       "expires_at": null,
       "embedding_id": null
@@ -72,6 +73,7 @@
       "scope": "local",
       "type": "report_index",
       "title": "帮我规划一趟旅行，目的地是：山东",
+      "core_claim": null,
       "content": "Question: 帮我规划一趟旅行，目的地是：山东\n\nSummary:\n# 研究报告：2026年6月山东文化古迹精华游（泰山-曲阜）",
       "summary": "# 研究报告：2026年6月山东文化古迹精华游（泰山-曲阜） ## 摘要 本报告旨在为2026年6月下旬（基于当前日期2026年6月22日）前往山东省进行文化古迹主题短途旅行提供全面、客观的行程规划。研究重点围绕“一山（泰山）一圣（曲阜三孔）”两大核心世界遗产地，结合交通可达性、预算成本与季节性因素，整合分析了来自旅游攻略、票务平台、交通官网及新闻资讯...",
       "tags": [
@@ -91,9 +93,9 @@
         "created_from": "report_index"
       },
       "confidence": "high",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T09:59:14.008310Z",
-      "updated_at": "2026-06-22T09:59:14.008310Z",
+      "updated_at": "2026-06-23T02:15:40.616773Z",
       "last_used_at": null,
       "expires_at": null,
       "embedding_id": null
@@ -123,9 +125,9 @@
         "created_from": "memory_suggestion"
       },
       "confidence": "medium",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T10:28:40.210718Z",
-      "updated_at": "2026-06-22T10:28:40.210718Z",
+      "updated_at": "2026-06-23T02:15:34.584152Z",
       "last_used_at": "2026-06-23T01:53:10.523857Z",
       "expires_at": null,
       "embedding_id": null
@@ -155,9 +157,9 @@
         "created_from": "report_index"
       },
       "confidence": "high",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T12:32:44.141715Z",
-      "updated_at": "2026-06-22T12:32:44.141715Z",
+      "updated_at": "2026-06-23T02:15:36.032242Z",
       "last_used_at": "2026-06-23T01:53:10.523846Z",
       "expires_at": null,
       "embedding_id": null
@@ -187,9 +189,9 @@
         "created_from": "memory_suggestion"
       },
       "confidence": "medium",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T12:33:13.643022Z",
-      "updated_at": "2026-06-22T12:33:13.643022Z",
+      "updated_at": "2026-06-23T02:15:36.818148Z",
       "last_used_at": "2026-06-23T01:53:10.523829Z",
       "expires_at": null,
       "embedding_id": null
@@ -219,9 +221,9 @@
         "created_from": "memory_suggestion"
       },
       "confidence": "medium",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T12:33:21.072808Z",
-      "updated_at": "2026-06-22T12:33:21.072808Z",
+      "updated_at": "2026-06-23T02:15:37.720067Z",
       "last_used_at": "2026-06-23T01:53:10.523769Z",
       "expires_at": null,
       "embedding_id": null
@@ -231,6 +233,7 @@
       "scope": "local",
       "type": "report_index",
       "title": "帮我规划一趟旅行，目的地是：晋中",
+      "core_claim": null,
       "content": "Question: 帮我规划一趟旅行，目的地是：晋中\n\nSummary:\n# 晋中古城与晋商文化经典两日游：一份深耕历史脉络的旅行方案",
       "summary": "# 晋中古城与晋商文化经典两日游：一份深耕历史脉络的旅行方案 ## 摘要 本报告旨在为偏好“古城与晋商文化”主题的旅行者，规划一份聚焦山西晋中地区、为期两日的紧凑型深度文化体验方案。基于对多个旅游平台及官方资讯的综合分析，本行程以世界文化遗产平遥古城为核心沉浸式体验区，辅以晋商大院文化的杰出代表乔家大院，力求在有限时间内最大化地展现明清时期晋商的历史风...",
       "tags": [
@@ -250,9 +253,9 @@
         "created_from": "report_index"
       },
       "confidence": "high",
-      "status": "active",
+      "status": "deleted",
       "created_at": "2026-06-22T14:10:00.217503Z",
-      "updated_at": "2026-06-22T14:10:00.217503Z",
+      "updated_at": "2026-06-23T02:15:42.036212Z",
       "last_used_at": null,
       "expires_at": null,
       "embedding_id": null
@@ -446,6 +449,102 @@
       "created_at": "2026-06-23T01:53:27.663442Z",
       "updated_at": "2026-06-23T01:53:27.663442Z",
       "last_used_at": "2026-06-23T01:54:07.349370Z",
+      "expires_at": null,
+      "embedding_id": null
+    },
+    "memory_3937d89843574d0eb6795c702400c48d": {
+      "id": "memory_3937d89843574d0eb6795c702400c48d",
+      "scope": "local",
+      "type": "report_index",
+      "title": "赛博朋克的发展",
+      "core_claim": "赛博朋克文学发展研究报告：历史脉络与关键节点 赛博朋克（Cyberpunk）作为一个独特的科幻文学流派，其核心在于“高科技，低生活”（High Tech, Low Life）的反乌托邦叙事，探讨近未来世界中技术垄断、社会崩溃与人类异化...",
+      "content": "Question: 赛博朋克的发展\n\nSummary:\n# 赛博朋克文学发展研究报告：历史脉络与关键节点",
+      "summary": "# 赛博朋克文学发展研究报告：历史脉络与关键节点 赛博朋克（Cyberpunk）作为一个独特的科幻文学流派，其核心在于“高科技，低生活”（High Tech, Low Life）的反乌托邦叙事，探讨近未来世界中技术垄断、社会崩溃与人类异化的交织困境。本报告严格聚焦于文学作品维度，以威廉·吉布森（William Gibson）与菲利普·K·迪克（Phil...",
+      "tags": [
+        "赛博朋克的发展",
+        "赛博朋克文学发展研究报告",
+        "历史脉络与关键节点",
+        "赛博朋克",
+        "cyberpunk",
+        "作为一个独特的科幻文学流派",
+        "其核心在于",
+        "高科技"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "e4b0c192-7781-448f-b8e1-e5083c2748d1",
+        "message_id": null,
+        "created_from": "report_index"
+      },
+      "confidence": "high",
+      "status": "active",
+      "created_at": "2026-06-23T02:05:41.940620Z",
+      "updated_at": "2026-06-23T02:05:41.940620Z",
+      "last_used_at": null,
+      "expires_at": null,
+      "embedding_id": null
+    },
+    "memory_800822520dde41d99421a46e2e563ffa": {
+      "id": "memory_800822520dde41d99421a46e2e563ffa",
+      "scope": "local",
+      "type": "research_knowledge",
+      "title": "赛博朋克的发展",
+      "core_claim": "赛博朋克文学发展研究报告：历史脉络与关键节点 赛博朋克（Cyberpunk）作为一个独特的科幻文学流派，其核心在于“高科技，低生活”（High Tech, Low Life）的反乌托邦叙事，探讨近未来世界中技术垄断、社会崩溃与人类异化...",
+      "content": "# 赛博朋克文学发展研究报告：历史脉络与关键节点 赛博朋克（Cyberpunk）作为一个独特的科幻文学流派，其核心在于“高科技，低生活”（High Tech, Low Life）的反乌托邦叙事，探讨近未来世界中技术垄断、社会崩溃与人类异化的交织困境。本报告严格聚焦于文学作品维度，以威廉·吉布森（William Gibson）与菲利普·K·迪克（Phil...",
+      "summary": "# 赛博朋克文学发展研究报告：历史脉络与关键节点 赛博朋克（Cyberpunk）作为一个独特的科幻文学流派，其核心在于“高科技，低生活”（High Tech, Low Life）的反乌托邦叙事，探讨近未来世界中技术垄断、社会崩溃与人类异化的交织困境。本报告严格聚焦于文学作品维度，以威廉·吉布森（William Gibson）与菲利普·K·迪克（Phil...",
+      "tags": [
+        "赛博朋克的发展",
+        "赛博朋克文学发展研究报告",
+        "历史脉络与关键节点",
+        "赛博朋克",
+        "cyberpunk",
+        "作为一个独特的科幻文学流派",
+        "其核心在于",
+        "高科技"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "e4b0c192-7781-448f-b8e1-e5083c2748d1",
+        "message_id": null,
+        "created_from": "memory_suggestion"
+      },
+      "confidence": "medium",
+      "status": "active",
+      "created_at": "2026-06-23T02:16:14.799094Z",
+      "updated_at": "2026-06-23T02:16:14.799094Z",
+      "last_used_at": null,
+      "expires_at": null,
+      "embedding_id": null
+    },
+    "memory_46f4e50a2fbf4852b64f22056c0d3456": {
+      "id": "memory_46f4e50a2fbf4852b64f22056c0d3456",
+      "scope": "local",
+      "type": "saved_context",
+      "title": "Context: 赛博朋克的发展",
+      "core_claim": null,
+      "content": "User previously researched: 赛博朋克的发展",
+      "summary": "User previously researched: 赛博朋克的发展",
+      "tags": [
+        "赛博朋克的发展",
+        "赛博朋克文学发展研究报告",
+        "历史脉络与关键节点",
+        "赛博朋克",
+        "cyberpunk",
+        "作为一个独特的科幻文学流派",
+        "其核心在于",
+        "高科技"
+      ],
+      "source": {
+        "kind": "report",
+        "report_id": "e4b0c192-7781-448f-b8e1-e5083c2748d1",
+        "message_id": null,
+        "created_from": "memory_suggestion"
+      },
+      "confidence": "medium",
+      "status": "active",
+      "created_at": "2026-06-23T02:16:15.604633Z",
+      "updated_at": "2026-06-23T02:16:15.604633Z",
+      "last_used_at": null,
       "expires_at": null,
       "embedding_id": null
     }

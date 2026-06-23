@@ -203,7 +203,12 @@ export const useResearchMemory = () => {
     const load = async () => {
       setLoading(true);
       try {
-        await refreshSettings();
+        // 本地已有持久化设置时信任本地，避免被后端覆盖；
+        // 本地无设置时从后端引导默认值（默认关闭）
+        const cached = useResearchMemoryStore.getState().settings;
+        if (!cached) {
+          await refreshSettings();
+        }
         await refreshItems();
       } catch (error) {
         console.error("Failed to initialize research memory state:", error);
